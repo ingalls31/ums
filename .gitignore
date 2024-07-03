@@ -1,0 +1,8 @@
+backend.iml
+test_main.http
+test/
+data/
+.idea
+.vscode
+__pycache__/
+.env

@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+fastapi-mail
+
+packaging
+psycopg2-binary
+SQLAlchemy==1.4.36
+pymysql  # Remove if not needed anymore
+
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+
+pydantic[email]
+
+dotenv
