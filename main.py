@@ -6,7 +6,7 @@ from src.config.database import engine
 from src.config.config import APP_NAME, VERSION
 
 
-from src.routes import auth, users
+from src.routes import users, auth
 
 from src.routes.users import main, models
 from src.routes.auth import main, models
