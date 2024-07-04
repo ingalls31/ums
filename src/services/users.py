@@ -1,12 +1,13 @@
 from fastapi import HTTPException
 from pydantic import EmailStr
 
-from .models import User
 from sqlalchemy.orm import Session
+
+from src.models.users import User
 
 
 def get_users_admin(db: Session):
-    users = db.query(User.id, User.first_name, User.last_name, User.email, User.super_admin, User.disabled).all()
+    users = db.query(User().id, User.first_name, User.last_name, User.email, User.super_admin, User.disabled).all()
     return users
 
 

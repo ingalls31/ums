@@ -2,7 +2,8 @@ import string
 from src.config.database import Base
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 
-from src.routes.departments.models import Department
+from src.models.departments import Department
+
 
 
 class Major(Base):

@@ -2,8 +2,8 @@ import string
 from src.config.database import Base
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 
-from src.routes.subjects.models import Subject
-from src.routes.users.models import User
+from src.models.subjects import Subject
+from src.models.users import User
 
 
 class Point(Base):

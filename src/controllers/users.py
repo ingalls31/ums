@@ -1,23 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
-from src.routes.auth.service import get_current_active_user
+# from src.routes.auth.service import get_current_active_user
 from src.util.db_dependency import get_db
-from .services import *
-from .schemas import *
+from src.services.users import *
+from src.schemas.users import User
 
 router = APIRouter(
     prefix="/users",
     tags=["Users"],
     responses={404: {"description": "Not found"}},
 )
-@router.get("/")
-async def get_all_users(user: User = Depends(get_current_active_user),
-                        db: Session = Depends(get_db)):
-    if user.super_admin:
-        return get_users_admin(db=db)
-    else:
-        return get_users(db=db)
+# @router.get("/")
+# async def get_all_users(user: User = Depends(get_current_active_user),
+#                         db: Session = Depends(get_db)):
+#     if user.super_admin:
+#         return get_users_admin(db=db)
+#     else:
+#         return get_users(db=db)
 
 
 def get_user_by_id(user_id: int, db: Session):

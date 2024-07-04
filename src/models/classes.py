@@ -2,8 +2,8 @@ import string
 from src.config.database import Base
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 
-from src.routes.subjects.models import Subject
-from src.routes.users.models import Teacher
+from src.models.subjects import Subject
+from src.models.users import Teacher
 
 
 class Class(Base):
@@ -11,7 +11,7 @@ class Class(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(length=30))
-    teacher = Column(Integer, ForeignKey(Teacher.id, ondelete='CASCADE'))
+    teacher = Column(Integer, ForeignKey(Teacher().id, ondelete='CASCADE'))
     subject = Column(Integer, ForeignKey(Subject.id, ondelete='CASCADE'))
     description = Column(String(length=250))
     total = Column(Integer)
