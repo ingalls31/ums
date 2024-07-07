@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 
-from middleware.router_logging import RouterLoggingMiddleware
+from src.middleware.router_logging import RouterLoggingMiddleware
 import src
 from src.config.database import engine
 from src.config.config import APP_NAME, logging_config, VERSION
