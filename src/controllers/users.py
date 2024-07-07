@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-# from src.routes.auth.service import get_current_active_user
 from src.config.database import SessionLocal
 from src.util.db_dependency import get_db
 from src.services.users import *
-from src.schemas.users import UserSchema
+from src.schemas.users import UserBaseSchema, UserSchema
 
 router = APIRouter(
     prefix="/users",
@@ -19,61 +19,169 @@ def get_db():
         yield db
     finally:
         db.close()
-# @router.get("/")
-# async def get_all_users(user: User = Depends(get_current_active_user),
-#                         db: Session = Depends(get_db)):
-#     if user.super_admin:
-#         return get_users_admin(db=db)
-#     else:
-#         return get_users(db=db)
 
-@router.post("/", response_model=UserSchema)
-def create_user(user_data: UserSchema, db: Session = Depends(get_db)):
+
+
+@router.post("/", response_model=UserBaseSchema)
+def create_user(
+    user: UserBaseSchema,  # UserSchema object representing the user to be created
+    db: Session = Depends(get_db)  # Dependency injection for the database session
+):
     """
-    Creates a new user in the database with the provided user data.
+    Create a new user.
 
     Args:
-        user_data (UserSchema): The data of the user to be created.
-        db (Session): The database session to use.
+        user (UserSchema): The user object containing the user details.
+        db (Session): The database session.
 
     Returns:
-        UserSchema: The newly created user.
-
-    Raises:
-        None.
+        UserSchema: The created user object.
     """
-    # Create a new User object with the provided user data
-    user = User(
-        id=123,  # TODO: Generate a unique id
-        first_name=user_data.first_name,
-        last_name=user_data.last_name,
-        email=user_data.email,
-        password=user_data.password,
-        gender=user_data.gender,
-        phone=user_data.phone,
-        dob=user_data.dob,
-        address=user_data.address,
-        super_admin=user_data.super_admin,
-        disabled=user_data.disabled
-    )
+    # Convert the UserSchema object to a User object
+    # Creating a new user object from the UserSchema object
+    new_user = User(**vars(user))
 
-    # Add the new user to the database
-    db.add(user)
+    # Add the new user to the database session
+    # Adding the new user to the database session
+    db.add(new_user)
+
+    # Commit the changes to the database
+    # Committing the changes to the database
     db.commit()
 
-    # Refresh the user object to get the updated database values
+    # Refresh the new user object with the generated ID and other database values
+    # Refreshing the new user object with the generated ID and other database values
+    db.refresh(new_user)
+
+    # Return the created user object
+    return new_user
+
+@router.get("/", response_model=List[UserSchema])
+def get_all_users(
+    db: Session = Depends(get_db),
+    email: Optional[str] = Query(None, description="Filter by email"),
+    gender: Optional[str] = Query(None, description="Filter by gender"),
+    phone: Optional[str] = Query(None, description="Filter by phone number"),
+    address: Optional[str] = Query(None, description="Filter by address")
+):
+    """
+    Get all users from the database with optional filtering by email, gender, phone, and address.
+
+    Args:
+        db (Session): The database session.
+        email (str, optional): Email filter.
+        gender (str, optional): Gender filter.
+        phone (str, optional): Phone filter.
+        address (str, optional): Address filter.
+
+    Returns:
+        List[UserSchema]: The list of UserSchema objects representing all users.
+    """
+    # Start with a query object
+    query = db.query(User)
+
+    # Apply filters if provided
+    if email:
+        query = query.filter(User.email == email)
+    if gender:
+        query = query.filter(User.gender == gender)
+    if phone:
+        query = query.filter(User.phone == phone)
+    if address:
+        query = query.filter(User.address == address)
+
+    # Execute the query and get all users matching the filters
+    users = query.all()
+
+    # Return the list of users
+    return users
+
+@router.get("/{user_id}", response_model=UserSchema)
+def get_user(user_id: str, db: Session = Depends(get_db)):
+    """
+    Get a user by ID.
+
+    Args:
+        user_id (str): The ID of the user.
+        db (Session): The database session.
+
+    Returns:
+        UserSchema: The user object.
+
+    Raises:
+        HTTPException: If the user is not found.
+    """
+    # Query the database for the user with the given ID
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    # Raise an exception if the user is not found
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Return the user object
+    return user
+
+@router.delete("/{user_id}", status_code=204)
+def delete_user(user_id: str, db: Session = Depends(get_db)):
+    """
+    Delete a user by their ID.
+
+    Args:
+        user_id (str): The ID of the user to be deleted.
+        db (Session): The database session.
+
+    Returns:
+        HTTP status code 204 (No Content) on successful deletion.
+
+    Raises:
+        HTTPException: If the user is not found.
+    """
+    # Query the database for the user with the given ID
+    user = db.query(User).filter(User.id == user_id).first()
+
+    # Raise an exception if the user is not found
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete the user from the database
+    db.delete(user)
+    db.commit()
+
+    # Return an empty response with status code 204 (No Content)
+    return {}
+
+@router.patch("/{user_id}", response_model=UserBaseSchema)
+def update_user(user_id: str, data: UserBaseSchema, db: Session = Depends(get_db)):
+    """
+    Partially update a user by their ID.
+
+    Args:
+        user_id (str): The ID of the user to be updated.
+        data (UserBaseSchema): The data to update, specified as partial schema.
+        db (Session): The database session.
+
+    Returns:
+        UserBaseSchema: The updated user object.
+
+    Raises:
+        HTTPException: If the user is not found.
+    """
+    # Query the database for the user with the given ID
+    user = db.query(User).filter(User.id == user_id).first()
+
+    # If the user does not exist, raise an exception
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update the user with the provided data
+    for key, value in data.dict(exclude_unset=True).items():
+        if value is not None:
+            setattr(user, key, value)
+
+    # Commit the changes to the database
+    db.commit()
+
+    # Refresh the updated user object
     db.refresh(user)
 
     return user
-
-# def get_user_by_id(user_id: int, db: Session):
-#     user = db.query(User.id, User.first_name, User.last_name, User.email, User.super_admin, User.disabled).filter(
-#         User.id == user_id).first()
-
-#     if not user:
-#         raise HTTPException(
-#             status_code=404,
-#             detail="There is no user with this id."
-#         )
-
-#     return user

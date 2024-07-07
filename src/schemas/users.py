@@ -3,11 +3,11 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 
-class UserSchema(BaseModel):
-    first_name: str
-    last_name: str
+class UserBaseSchema(BaseModel):
     email: EmailStr
-    password: str
+    password: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     gender: Optional[str] = None
     phone: Optional[str] = None
     dob: Optional[str] = None
@@ -17,3 +17,6 @@ class UserSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserSchema(UserBaseSchema):
+    id: str
