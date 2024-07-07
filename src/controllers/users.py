@@ -69,7 +69,7 @@ def get_all_users(
         "address": address
     }
     # Use the get_filtered_users service to get the filtered users
-    users = get_filtered_users(db, filters)
+    users = users_service.get_filtered_users(db, filters)
     return users
 
 @router.get("/{user_id}", response_model=UserSchema)

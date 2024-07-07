@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.models.users import User
 from src.schemas.users import UserBaseSchema
+from sqlalchemy.exc import SQLAlchemyError
 
 
 
@@ -18,25 +19,33 @@ def create_user(user: UserBaseSchema, db: Session) -> User:
         db (Session): The database session.
 
     Returns:
-        User: The created user object.
+        User: The created user object if successful; None if an error occurs.
 
     Raises:
-        None
+        Exception: Descriptive error if user creation fails.
     """
-    # Create a new User object from the UserBaseSchema
-    new_user = User(**vars(user))
+    try:
+        # Create a new User object from the UserBaseSchema
+        new_user = User(**vars(user))
+        
+        # Add the new user to the database session
+        db.add(new_user)
+        
+        # Commit the changes to the database
+        db.commit()
+        
+        # Refresh the updated user object
+        db.refresh(new_user)
+        
+        # Return the created user object
+        return new_user
     
-    # Add the new user to the database session
-    db.add(new_user)
-    
-    # Commit the changes to the database
-    db.commit()
-    
-    # Refresh the updated user object
-    db.refresh(new_user)
-    
-    # Return the created user object
-    return new_user
+    except SQLAlchemyError as e:
+        # Roll back the session in case of error
+        db.rollback()
+        
+        # Re-raise the exception with a custom message or handle it differently
+        raise Exception(f"Failed to create user: {e}")
 
 def get_filtered_users(db: Session, filters: dict) -> List[User]:
     """
@@ -51,18 +60,32 @@ def get_filtered_users(db: Session, filters: dict) -> List[User]:
 
     Returns:
         List[User]: A list of User objects that match the given filters.
+        
+    Raises:
+        Exception: Descriptive error if there is a problem during the query.
     """
-    # Start with a query object for the User model
-    query = db.query(User)
+    try:
+        # Start with a query object for the User model
+        query = db.query(User)
 
-    # Iterate over the filters and add them to the query
-    for key, value in filters.items():
-        # If the value is not None, add a filter to the query
-        if value is not None:
-            query = query.filter(getattr(User, key) == value)
+        # Iterate over the filters and add them to the query
+        for key, value in filters.items():
+            # If the value is not None, add a filter to the query
+            if value is not None:
+                try:
+                    query = query.filter(getattr(User, key) == value)
+                except AttributeError:
+                    raise ValueError(f"Invalid attribute for filtering: {key}")
 
-    # Execute the query and return the results
-    return query.all()
+        # Execute the query and return the results
+        return query.all()
+
+    except SQLAlchemyError as e:
+        # Log the error for debugging purposes
+        raise Exception(f"Database error occurred: {e}")
+    except Exception as e:
+        # Handle unexpected errors
+        raise Exception(f"An unexpected error occurred: {e}")
 
 
 
@@ -78,17 +101,26 @@ def get_user_by_id(db: Session, user_id: str) -> User:
         User: The user object with the given ID.
 
     Raises:
-        HTTPException: If the user is not found.
+        HTTPException: If the user is not found or if a database error occurs.
     """
-    # Query the database for the user with the given ID
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        # Query the database for the user with the given ID
+        user = db.query(User).filter(User.id == user_id).first()
 
-    # Raise an exception if the user is not found
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Raise an exception if the user is not found
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    # Return the user object
-    return user
+        # Return the user object
+        return user
+
+    except SQLAlchemyError as e:
+        # Log the error and raise an HTTPException with a generic error message
+       raise Exception(f"Database error occurred: {e}")
+
+    except Exception as e:
+        # Handle unexpected errors
+        raise Exception(f"An unexpected error occurred: {e}")
 
 def delete_user_by_id(db: Session, user_id: str) -> None:
     """
@@ -99,20 +131,33 @@ def delete_user_by_id(db: Session, user_id: str) -> None:
         user_id (str): The ID of the user to be deleted.
 
     Raises:
-        HTTPException: If the user is not found.
+        HTTPException: If the user is not found or if a database error occurs.
     """
-    # Query the database for the user with the given ID
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        # Query the database for the user with the given ID
+        user = db.query(User).filter(User.id == user_id).first()
 
-    # Raise an exception if the user is not found
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Raise an exception if the user is not found
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    # Delete the user from the database
-    db.delete(user)
+        # Delete the user from the database
+        db.delete(user)
 
-    # Commit the changes to the database
-    db.commit()
+        # Commit the changes to the database
+        db.commit()
+
+    except SQLAlchemyError as e:
+        # Rollback the session in case of error
+        db.rollback()
+
+        # Log the error and raise an HTTPException with a server error status
+        raise Exception(f"Database error occurred: {e}")
+
+
+    except Exception as e:
+        # Handle unexpected errors that are not caught by specific exceptions
+        raise Exception(f"An unexpected error occurred: {e}")
 
 
 def update_user_by_id(db: Session, user_id: str, update_data: UserBaseSchema) -> User:
@@ -125,28 +170,40 @@ def update_user_by_id(db: Session, user_id: str, update_data: UserBaseSchema) ->
         update_data (UserBaseSchema): The updated user data.
 
     Returns:
-        User: The updated user object.
+        User: The updated user object if the update is successful.
 
     Raises:
-        HTTPException: If the user is not found.
+        HTTPException: If the user is not found or if a database error occurs.
     """
-    # Query the database for the user with the given ID
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        # Query the database for the user with the given ID
+        user = db.query(User).filter(User.id == user_id).first()
 
-    # Raise an exception if the user is not found
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Raise an exception if the user is not found
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    # Update the user's attributes with the provided data
-    for key, value in update_data.dict(exclude_unset=True).items():
-        if value is not None:
-            setattr(user, key, value)
+        # Update the user's attributes with the provided data
+        for key, value in update_data.dict(exclude_unset=True).items():
+            if value is not None:
+                setattr(user, key, value)
 
-    # Commit the changes to the database
-    db.commit()
+        # Commit the changes to the database
+        db.commit()
 
-    # Refresh the updated user object
-    db.refresh(user)
+        # Refresh the updated user object
+        db.refresh(user)
 
-    # Return the updated user object
-    return user
+        # Return the updated user object
+        return user
+
+    except SQLAlchemyError as e:
+        # Rollback the session in case of error
+        db.rollback()
+
+        raise Exception(f"Database error occurred: {e}")
+
+
+    except Exception as e:
+        # Handle unexpected errors that are not caught by specific exceptions
+        raise Exception(f"An unexpected error occurred: {e}")

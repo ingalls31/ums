@@ -9,21 +9,50 @@ from starlette.types import Message
 import time
 
 def format_nested_dict_to_multiline(data, indent=0):
+    """
+    This function takes a nested dictionary or list and formats it into a list of strings.
+    Each string represents a line of the formatted output.
+
+    Parameters:
+    data (dict or list): The nested dictionary or list to be formatted.
+    indent (int): The number of indentation levels to add to each line. Default is 0.
+
+    Returns:
+    list: A list of strings, each representing a line of the formatted output.
+    """
+
+    # Initialize an empty list to store the formatted lines
     lines = []
+
+    # Define the string to be used for each indentation level
     indent_str = '    ' * indent 
+
+    # Check if the data is a dictionary
     if isinstance(data, dict):
+        # Iterate over each key-value pair in the dictionary
         for key, value in data.items():
+            # Check if the value is another dictionary or list
             if isinstance(value, (dict, list)):
+                # Add the key to the formatted line
                 lines.append(f"{indent_str}{key}:")
+                # Recursively format the value and append its lines to the formatted lines
                 lines.extend(format_nested_dict_to_multiline(value, indent + 1))
             else:
+                # Add the key-value pair to the formatted line
                 lines.append(f"{indent_str}{key}: {value}")
+    # Check if the data is a list
     elif isinstance(data, list):
+        # Iterate over each item in the list
         for index, item in enumerate(data):
+            # Add the index to the formatted line
             lines.append(f"{indent_str}[{index}]")
+            # Recursively format the item and append its lines to the formatted lines
             lines.extend(format_nested_dict_to_multiline(item, indent + 1))
+    # If the data is neither a dictionary nor a list, add it as a line
     else:
         lines.append(f"{indent_str}{data}")
+
+    # Return the formatted lines
     return lines
 
 def format_log_to_multiline(log_dict):
