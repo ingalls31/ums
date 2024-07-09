@@ -14,13 +14,13 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
 
 
 @router.post("/", response_model=UserSchema)
@@ -39,6 +39,7 @@ def create_user(
         UserSchema: The created user object.
     """
     return users_service.create_user(user, db)
+
 
 @router.get("/", response_model=List[UserSchema])
 def get_all_users(
@@ -72,6 +73,7 @@ def get_all_users(
     users = users_service.get_filtered_users(db, filters)
     return users
 
+
 @router.get("/{user_id}", response_model=UserSchema)
 def get_user(user_id: str, db: Session = Depends(get_db)):
     """
@@ -86,6 +88,7 @@ def get_user(user_id: str, db: Session = Depends(get_db)):
     """
     # Get the user with the given ID from the database
     return users_service.get_user_by_id(db, user_id)
+
 
 @router.delete("/{user_id}", status_code=204)
 def delete_user(user_id: str, db: Session = Depends(get_db)):
@@ -104,7 +107,6 @@ def delete_user(user_id: str, db: Session = Depends(get_db)):
 
     # Return an empty dictionary as the response body
     return {}
-
 
 
 @router.patch("/{user_id}", response_model=UserBaseSchema)
