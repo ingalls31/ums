@@ -15,13 +15,6 @@ router = APIRouter(
 )
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 @router.post("/", response_model=TeacherSchema)
 def create_teacher(
