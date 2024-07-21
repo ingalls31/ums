@@ -1,4 +1,5 @@
 import string
+import uuid
 from src.config.database import Base
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 
@@ -9,10 +10,10 @@ from src.models.majors import Major
 class Subject(Base):
     __tablename__ = 'subjects'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String(length=36), primary_key=True, default=str(uuid.uuid4()))
     name = Column(String(255), nullable=False, unique=True)
     description = Column(String(255), nullable=True)
     total = Column(Integer, default=0)
-    major = Column(Integer, ForeignKey(Major.id, ondelete='CASCADE'), nullable=False)
+    major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'), nullable=False)
     
     

@@ -29,7 +29,7 @@ class Student(Base):
     code = Column(String(length=10))
     user = Column(String, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
     gpa = Column(Integer)
-    major = Column(Integer, ForeignKey(Major.id, ondelete='CASCADE'))
+    major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
     
 class Teacher(Base):
     __tablename__ = 'teachers'
@@ -37,5 +37,5 @@ class Teacher(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(length=10))
     user = Column(String, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
-    major = Column(Integer, ForeignKey(Major.id, ondelete='CASCADE'))
+    major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
     

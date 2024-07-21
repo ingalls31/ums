@@ -1,4 +1,5 @@
 import string
+import uuid
 from src.config.database import Base
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 
@@ -9,9 +10,9 @@ from src.models.users import Teacher
 class Class(Base):
     __tablename__ = 'classes'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String(length=36), primary_key=True, default=str(uuid.uuid4()))
     name = Column(String(length=30))
-    teacher = Column(Integer, ForeignKey(Teacher().id, ondelete='CASCADE'))
-    subject = Column(Integer, ForeignKey(Subject.id, ondelete='CASCADE'))
+    teacher = Column(String, ForeignKey(Teacher().id, ondelete='CASCADE'))
+    subject = Column(String, ForeignKey(Subject.id, ondelete='CASCADE'))
     description = Column(String(length=250))
     total = Column(Integer)
