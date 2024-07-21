@@ -88,6 +88,9 @@ def delete_teacher(teacher_id: str, db: Session = Depends(get_db)) -> None:
         None
     """
     teachers_service.delete_teacher(db, teacher_id)
+    
+    return JSONResponse(status_code=204)
+    
 
 
 @router.patch("/{teacher_id}", response_model=TeacherBaseSchema)

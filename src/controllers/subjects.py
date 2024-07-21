@@ -81,6 +81,9 @@ def delete_subject(subject_id: str, db: Session = Depends(get_db)) -> None:
         db (Session): The database session.
     """
     subjects_service.delete_subject(db, subject_id)
+    
+    return JSONResponse(status_code=204)
+    
 
 
 @router.patch("/{subject_id}", response_model=SubjectBaseSchema)

@@ -94,6 +94,8 @@ def delete_point(point_id: str, db: Session = Depends(get_db)) -> None:
         None
     """
     points_service.delete_point(db, point_id)
+    
+    return JSONResponse(status_code=204)
 
 
 @router.patch("/{point_id}", response_model=PointBaseSchema)

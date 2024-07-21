@@ -89,6 +89,9 @@ def delete_department(department_id: str, db: Session = Depends(get_db)) -> None
         None
     """
     departments_service.delete_department(db, department_id)
+    
+    return JSONResponse(status_code=204)
+    
 
 
 @router.patch("/{department_id}", response_model=DepartmentBaseSchema)

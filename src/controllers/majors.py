@@ -81,6 +81,9 @@ def delete_major(major_id: str, db: Session = Depends(get_db)) -> None:
         None
     """
     majors_service.delete_major_by_id(db, major_id)
+    
+    return JSONResponse(status_code=204)
+    
 
 
 @router.patch("/{major_id}", response_model=MajorBaseSchema)

@@ -99,7 +99,8 @@ def delete_user(user_id: str, db: Session = Depends(get_db)):
     users_service.delete_user_by_id(db, user_id)
 
     # Return an empty dictionary as the response body
-    return {}
+    return JSONResponse(status_code=204)
+
 
 
 @router.patch("/{user_id}", response_model=UserBaseSchema)
