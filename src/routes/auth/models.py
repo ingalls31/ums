@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from src.config.database import Base
+from src.config.settings import Base
 from sqlalchemy import Column, String, Integer, TIMESTAMP, ForeignKey
 
 from src.models.users import User

@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from src.config.database import SessionLocal
+from src.config.settings import SessionLocal
 from src.schemas.students import StudentBaseSchema, StudentSchema
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session

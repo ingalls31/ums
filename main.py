@@ -12,7 +12,7 @@ import src.controllers.subjects
 import src.controllers.teachers
 from src.middleware.router_logging import RouterLoggingMiddleware
 import src
-from src.config.database import engine
+from src.config.settings import engine
 from src.config.config import APP_NAME, logging_config, VERSION
 
 import src.controllers
