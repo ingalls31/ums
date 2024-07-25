@@ -10,7 +10,7 @@ from src.models.users import User
 class Point(Base):
     __tablename__ = 'points'
 
-    id = Column(String(length=36), primary_key=True, default=str(uuid.uuid4()))
+    id = Column(String(length=36), primary_key=True, default=lambda: str(uuid.uuid4()))
     subject = Column(String, ForeignKey(Subject.id, ondelete='CASCADE'), nullable=False)
     user = Column(String, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
     diligence = Column(Integer)

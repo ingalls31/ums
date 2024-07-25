@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import UUID
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(String(length=36), primary_key=True, default=str(uuid.uuid4()))
+    id = Column(String(length=36), primary_key=True, default=lambda: str(uuid.uuid4()))
     first_name = Column(String(length=30), nullable=True)
     last_name = Column(String(length=30), nullable=True)
     email = Column(String(length=100))
@@ -22,20 +22,22 @@ class User(Base):
     super_admin = Column(Boolean, default=False)
     disabled = Column(Boolean, default=False)
     
+    
 class Student(Base): 
     __tablename__ = 'students'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String(length=36), primary_key=True, default=lambda: str(uuid.uuid4()))
     code = Column(String(length=10))
-    user = Column(String, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
+    user = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
     gpa = Column(Integer)
     major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
+    
     
 class Teacher(Base):
     __tablename__ = 'teachers'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String(length=36), primary_key=True, default=lambda: str(uuid.uuid4()))
     code = Column(String(length=10))
-    user = Column(String, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
+    user = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
     major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
     

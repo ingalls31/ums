@@ -10,11 +10,9 @@ from src.services import subjects as subjects_service
 
 router = APIRouter(
     prefix="/subjects",
-    tags=["subjects",],
+    tags=["Subjects",],
     responses={404: {"description": "Not found"}},
 )
-
-
 
 
 @router.post("/", response_model=SubjectBaseSchema)
