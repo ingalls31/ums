@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 
+import src.controllers.auth
 import src.controllers.classes
 import src.controllers.departments
 import src.controllers.majors
@@ -64,4 +65,6 @@ app.include_router(src.controllers.classes.router)
 app.include_router(src.controllers.points.router)
 app.include_router(src.controllers.departments.router)
 app.include_router(src.controllers.majors.router)
+app.include_router(src.controllers.auth.router)
+
 # app.include_router(auth.main.router)

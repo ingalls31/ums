@@ -9,10 +9,6 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-class GPTToken(Token):
-    expires_in: int
-    refresh_token: str
-
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
@@ -24,19 +20,19 @@ class User(BaseModel):
     email_verified: Union[bool, None] = None
 
 
-class USER(User, table=True):
-    """
-    Represents a User in the database.
-    """
+# class USER(User, table=True):
+#     """
+#     Represents a User in the database.
+#     """
 
-    id: UUID | None = Field(primary_key=True, index=True, default_factory=uuid4)
-    hashed_password: str = Field( index=True)
-    email_verified: bool = Field(default=False)
+#     id: UUID | None = Field(primary_key=True, index=True, default_factory=uuid4)
+#     hashed_password: str = Field( index=True)
+#     email_verified: bool = Field(default=False)
 
-    updated_at: datetime | None = Field(
-        default_factory=datetime.now, sa_column_kwargs={"onupdate": datetime.now}
-    )
-    created_at: datetime | None = Field(default_factory=datetime.now)
+#     updated_at: datetime | None = Field(
+#         default_factory=datetime.now, sa_column_kwargs={"onupdate": datetime.now}
+#     )
+#     created_at: datetime | None = Field(default_factory=datetime.now)
 
 class RegisterUser(User):
     password: str
@@ -49,7 +45,7 @@ class UserInDB(User):
 class UserOutput(User):
     id: UUID
 
-class LoginResonse(Token):
+class LoginResponse(Token):
     user: UserOutput
     expires_in: int
     refresh_token: str

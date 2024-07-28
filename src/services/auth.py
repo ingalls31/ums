@@ -9,11 +9,11 @@ from typing import Union
 from jose import JWTError, jwt
 from uuid import UUID
 
-from src.config.settings import settings
+from src.config import settings
 
+from src.models.users import User
 from src.schemas.auth import TokenData, RegisterUser
-from src.util.auth import verify_password, credentials_exception, create_refresh_token, validate_refresh_token, get_current_user_dep
-from app.crud import get_user, db_signup_users, InvalidUserException
+from src.util.auth import get_password_hash, verify_password, credentials_exception, create_refresh_token, validate_refresh_token, get_current_user_dep
 from src.util.db_dependency import get_db
 
 # to get a string like this run:
@@ -26,22 +26,83 @@ REFRESH_TOKEN_EXPIRE_MINUTES = float(str(settings.REFRESH_TOKEN_EXPIRE_MINUTES))
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-
-
-def authenticate_user(db, username: str, password: str):
+class InvalidUserException(Exception):
     """
-    Authenticates a user by checking if the provided username and password match the stored credentials.
+    Exception raised when a user is not found in the database.
+    """
+
+    def __init__(self, status_code: int, detail: str):
+        self.status_code = status_code
+        self.detail = detail
+        super().__init__(detail)
+
+
+def get_user(db: Session, email: Union[str, None] = None):
+
+    try:
+        if email is None:
+            raise InvalidUserException(status_code=404, detail="Email not provided")
+
+        user_query = db.query(User).where(User.email == email)
+        user = db.exec(user_query).first()
+
+        if not user:
+            raise InvalidUserException(status_code=404, detail="User not found")
+        print("user", user)
+        return user
+    except InvalidUserException:
+        raise
+    except Exception as e:
+        print("Exception", e)
+        raise InvalidUserException(status_code=400, detail=str(e))
+
+
+async def db_signup_users(
+    user_data: RegisterUser, db: Session
+):
+    # Check if user already exists
+    existing_user_email_query = db.query(User).where((User.email == user_data.email))
+    existing_user_email = db.exec(existing_user_email_query).first()
+    if existing_user_email:
+        raise InvalidUserException(status_code=400, detail="Email already registered")
+    
+    existing_user_query = db.query(User).where((User.email == user_data.email))
+    existing_user = db.exec(existing_user_query).first()
+    if existing_user:
+        raise InvalidUserException(status_code=400, detail="Email already registered")
+
+    # Hash the password
+    hashed_password = get_password_hash(user_data.password)
+
+    # Create new user instance
+    new_user = User(
+        email=user_data.email,
+        hashed_password=hashed_password,
+    )
+
+    # Add new user to the database
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    # Return the new user data
+    return new_user
+
+
+def authenticate_user(db, email: str, password: str):
+    """
+    Authenticates a user by checking if the provided email and password match the stored credentials.
 
     Args:
         db: The database object used for querying user information.
-        username (str): The username of the user to authenticate.
+        email (str): The email of the user to authenticate.
         password (str): The password of the user to authenticate.
 
     Returns:
         user: The authenticated user object if the credentials are valid, False otherwise.
     """
     try: 
-        user = get_user(db, username)
+        user = get_user(db, email)
         if not user:
             return False
         print("\n ------------- \n user.hashed_password", user.hashed_password)
@@ -106,13 +167,13 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db:  A
 
         payload = jwt.decode(token, str(SECRET_KEY),
                              algorithms=[str(ALGORITHM)])
-        username: Union[str, None] = payload.get("sub")
-        if username is None:
+        email: Union[str, None] = payload.get("sub")
+        if email is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
+        token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    user = get_user(db, username=token_data.username)
+    user = get_user(db, email=token_data.email)
     if user is None:
         raise credentials_exception
     return user
@@ -125,31 +186,31 @@ async def service_login_for_access_token(
     Authenticates the user and generates an access token.
 
     Args:
-        form_data (OAuth2PasswordRequestForm): The form data containing the username and password.
+        form_data (OAuth2PasswordRequestForm): The form data containing the email and password.
         db (Session, optional): The database session. Defaults to Depends(get_db).
 
     Returns:
         dict: A dictionary containing the access token, token type, and user information.
     """
     try:
-        user = authenticate_user(db, form_data.username, form_data.password)
+        user = authenticate_user(db, form_data.email, form_data.password)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         access_token_expires = timedelta(
             minutes=float(str(ACCESS_TOKEN_EXPIRE_MINUTES)))
         access_token = create_access_token(
-            data={"sub": user.username, "id": user.id}, expires_delta=access_token_expires
+            data={"sub": user.email, "id": user.id}, expires_delta=access_token_expires
         )
 
         # Generate refresh token (you might want to set a longer expiry for this)
         refresh_token_expires = timedelta(
             minutes=float(str(REFRESH_TOKEN_EXPIRE_MINUTES)))
         refresh_token = create_refresh_token(
-            data={"sub": user.username, "id": user.id}, expires_delta=refresh_token_expires)
+            data={"sub": user.email, "id": user.id}, expires_delta=refresh_token_expires)
 
         return {"access_token": access_token, "token_type": "bearer", "user": user, "expires_in": int(access_token_expires.total_seconds()), "refresh_token": refresh_token}
     except InvalidUserException as e:
