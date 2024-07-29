@@ -44,7 +44,7 @@ def get_user(db: Session, email: Union[str, None] = None):
             raise InvalidUserException(status_code=404, detail="Email not provided")
 
         user_query = db.query(User).where(User.email == email)
-        user = db.exec(user_query).first()
+        user = user_query.first()
 
         if not user:
             raise InvalidUserException(status_code=404, detail="User not found")
@@ -57,19 +57,15 @@ def get_user(db: Session, email: Union[str, None] = None):
         raise InvalidUserException(status_code=400, detail=str(e))
 
 
-async def db_signup_users(
+def db_signup_users(
     user_data: RegisterUser, db: Session
 ):
     # Check if user already exists
-    existing_user_email_query = db.query(User).where((User.email == user_data.email))
-    existing_user_email = db.exec(existing_user_email_query).first()
+    existing_user_email_query = db.query(User).filter(User.email == user_data.email)
+    existing_user_email = existing_user_email_query.first()
     if existing_user_email:
         raise InvalidUserException(status_code=400, detail="Email already registered")
-    
-    existing_user_query = db.query(User).where((User.email == user_data.email))
-    existing_user = db.exec(existing_user_query).first()
-    if existing_user:
-        raise InvalidUserException(status_code=400, detail="Email already registered")
+
 
     # Hash the password
     hashed_password = get_password_hash(user_data.password)
@@ -77,7 +73,7 @@ async def db_signup_users(
     # Create new user instance
     new_user = User(
         email=user_data.email,
-        hashed_password=hashed_password,
+        password=hashed_password,
     )
 
     # Add new user to the database
@@ -105,8 +101,7 @@ def authenticate_user(db, email: str, password: str):
         user = get_user(db, email)
         if not user:
             return False
-        print("\n ------------- \n user.hashed_password", user.hashed_password)
-        if not verify_password(password, user.hashed_password):
+        if not verify_password(password, user.password):
             return False
         return user
     except InvalidUserException:

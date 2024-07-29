@@ -14,10 +14,7 @@ class TokenData(BaseModel):
     username: Union[str, None] = None
 
 class User(BaseModel):
-    username: str = Field( unique=True, index=True)
     email: str = Field( unique=True, index=True)
-    full_name: str = Field()
-    email_verified: Union[bool, None] = None
 
 
 # class USER(User, table=True):

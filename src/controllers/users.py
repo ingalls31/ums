@@ -3,10 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
+from src.schemas.auth import RegisterUser
 from src.util.db_dependency import get_db
 from src.services.users import *
 from src.schemas.users import UserBaseSchema, UserSchema
 from src.services import users as users_service
+from src.services import auth as auth_service
+
 
 router = APIRouter(
     prefix="/users",
@@ -18,7 +21,7 @@ router = APIRouter(
 
 @router.post("/", response_model=UserSchema)
 def create_user(
-    user: UserBaseSchema,  # UserSchema object representing the user to be created
+    user: RegisterUser,  # UserSchema object representing the user to be created
     db: Session = Depends(get_db)  # Dependency injection for the database session
 ):
     """
@@ -31,7 +34,7 @@ def create_user(
     Returns:
         UserSchema: The created user object.
     """
-    return users_service.create_user(user, db)
+    return auth_service.db_signup_users(user, db)
 
 
 @router.get("/", response_model=List[UserSchema])
