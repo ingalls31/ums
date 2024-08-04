@@ -61,28 +61,33 @@ def db_signup_users(
     user_data: RegisterUser, db: Session
 ):
     # Check if user already exists
-    existing_user_email_query = db.query(User).filter(User.email == user_data.email)
-    existing_user_email = existing_user_email_query.first()
-    if existing_user_email:
-        raise InvalidUserException(status_code=400, detail="Email already registered")
+    try:
+        existing_user_email_query = db.query(User).filter(User.email == user_data.email)
+        existing_user_email = existing_user_email_query.first()
+        if existing_user_email:
+            raise InvalidUserException(status_code=400, detail="Email already registered")
 
+        # Hash the password
+        hashed_password = get_password_hash(user_data.password)
 
-    # Hash the password
-    hashed_password = get_password_hash(user_data.password)
+        # Create new user instance
+        new_user = User(
+            email=user_data.email,
+            password=hashed_password,
+        )
 
-    # Create new user instance
-    new_user = User(
-        email=user_data.email,
-        password=hashed_password,
-    )
+        # Add new user to the database
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-    # Add new user to the database
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    # Return the new user data
-    return new_user
+        # Return the new user data
+        return new_user
+    except InvalidUserException:
+        raise
+    except Exception as e:
+        print("Exception", e)
+        raise InvalidUserException(status_code=400, detail=str(e))
 
 
 def authenticate_user(db, email: str, password: str):
@@ -120,23 +125,26 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     Returns:
         str: The encoded access token.
     """
-    to_encode = data.copy()
-    # Convert UUID to string if it's present in the data
-    if 'id' in to_encode and isinstance(to_encode['id'], UUID):
-        to_encode['id'] = str(to_encode['id'])
+    try:
+        to_encode = data.copy()
+        # Convert UUID to string if it's present in the data
+        if 'id' in to_encode and isinstance(to_encode['id'], UUID):
+            to_encode['id'] = str(to_encode['id'])
 
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + expires_delta
 
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=1)
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(minutes=1)
 
-    to_encode.update({"exp": expire})
+        to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(to_encode, str(
-        SECRET_KEY), algorithm=str(ALGORITHM))
+        encoded_jwt = jwt.encode(to_encode, str(
+            SECRET_KEY), algorithm=str(ALGORITHM))
 
-    return encoded_jwt
+        return encoded_jwt
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db:  Annotated[Session, Depends(get_db)]):
@@ -153,13 +161,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db:  A
     Raises:
         HTTPException: If the credentials cannot be validated.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
-
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
         payload = jwt.decode(token, str(SECRET_KEY),
                              algorithms=[str(ALGORITHM)])
         email: Union[str, None] = payload.get("sub")
@@ -168,10 +175,13 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db:  A
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    user = get_user(db, email=token_data.email)
-    if user is None:
+    try:
+        user = get_user(db, email=token_data.email)
+        if user is None:
+            raise credentials_exception
+        return user
+    except InvalidUserException:
         raise credentials_exception
-    return user
 
 
 async def service_login_for_access_token(

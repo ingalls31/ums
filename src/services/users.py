@@ -88,11 +88,13 @@ def get_user_by_id(db: Session, user_id: str) -> User:
         user = db.query(User).filter(User.id == user_id).first()
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
+        
+        del user.password
         return user
     
     except SQLAlchemyError as e:
-       raise Exception(f"Database error occurred: {e}")
-   
+        raise Exception(f"Database error occurred: {e}")
+
     except Exception as e:
         raise Exception(f"An unexpected error occurred: {e}")
 

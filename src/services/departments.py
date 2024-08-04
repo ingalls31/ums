@@ -29,7 +29,6 @@ def create_department(department: DepartmentBaseSchema, db: Session) -> Departme
         db.commit()
         db.refresh(new_department)
         return new_department
-    
     except SQLAlchemyError as error:
         db.rollback()
         raise Exception(f"Failed to create department: {error}")
@@ -61,7 +60,12 @@ def get_filtered_departments(db: Session, filters: dict[str, Any]) -> List[Depar
             except AttributeError as error:
                 raise ValueError(f"Invalid attribute for filtering: {error}")
 
-    return query.all()
+    try:
+        result = query.all()
+    except SQLAlchemyError as error:
+        raise Exception(f"Failed to get filtered departments: {error}")
+
+    return result
 
 
 def get_department_by_id(db: Session, department_id: str) -> Department:
@@ -78,10 +82,13 @@ def get_department_by_id(db: Session, department_id: str) -> Department:
     Raises:
         HTTPException: If the department is not found or if a database error occurs.
     """
-    department = db.query(Department).get(department_id)
-    if department is None:
-        raise HTTPException(status_code=404, detail="Department not found")
-    return department
+    try:
+        department = db.query(Department).get(department_id)
+        if department is None:
+            raise HTTPException(status_code=404, detail="Department not found")
+        return department
+    except SQLAlchemyError as error:
+        raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
 
 
 def delete_department(db: Session, department_id: str) -> None:
@@ -101,10 +108,9 @@ def delete_department(db: Session, department_id: str) -> None:
             raise HTTPException(status_code=404, detail="Department not found")
         db.delete(department)
         db.commit()
-
-    except SQLAlchemyError:
+    except SQLAlchemyError as error:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database error occurred")
+        raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
 
 
 def update_department(db: Session, department_id: str, update_data: DepartmentBaseSchema) -> Department:
@@ -139,3 +145,4 @@ def update_department(db: Session, department_id: str, update_data: DepartmentBa
     except SQLAlchemyError as error:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
+

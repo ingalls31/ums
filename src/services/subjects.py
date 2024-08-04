@@ -72,10 +72,13 @@ def get_subject_by_id(db: Session, subject_id: str) -> Subject:
     Raises:
         HTTPException: If the subject is not found or if a database error occurs.
     """
-    subject = db.query(Subject).get(subject_id)
-    if subject is None:
-        raise HTTPException(status_code=404, detail="Subject not found")
-    return subject
+    try:
+        subject = db.query(Subject).get(subject_id)
+        if subject is None:
+            raise HTTPException(status_code=404, detail="Subject not found")
+        return subject
+    except SQLAlchemyError:
+        raise HTTPException(status_code=500, detail="Database error occurred")
 
 
 def delete_subject(db: Session, subject_id: str) -> None:
@@ -115,17 +118,18 @@ def update_subject(db: Session, subject_id: str, update_data: SubjectBaseSchema)
     Raises:
         HTTPException: If the subject is not found or if a database error occurs.
     """
-    subject = db.query(Subject).get(subject_id)
-    if subject is None:
-        raise HTTPException(status_code=404, detail="Subject not found")
-
-    for field, value in update_data.dict(exclude_unset=True).items():
-        setattr(subject, field, value)
-
     try:
+        subject = db.query(Subject).get(subject_id)
+        if subject is None:
+            raise HTTPException(status_code=404, detail="Subject not found")
+
+        for field, value in update_data.dict(exclude_unset=True).items():
+            setattr(subject, field, value)
+
         db.commit()
         db.refresh(subject)
         return subject
     except SQLAlchemyError as error:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
+

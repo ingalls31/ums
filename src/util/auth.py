@@ -1,23 +1,46 @@
 
-from fastapi import HTTPException, status, Security
-from fastapi.security import OAuth2PasswordBearer
+import sqlalchemy.orm
+import uuid
+from fastapi import Depends, Form, HTTPException, status, Security
+from fastapi.security import HTTPBearer, OAuth2, OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from datetime import datetime, timedelta, timezone
-from typing import Union, Any
+from typing import Annotated, Union, Any
 from uuid import UUID
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+from pydantic import BaseModel
+from src.services import users as users_service
 
 from src.config import settings
+from src.util.db_dependency import get_db
+from sqlalchemy.orm import Session
+
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+security = HTTPBearer()
 
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
+
+async def get_current_user_dep(bearer=Depends(security), db: Session = Depends(get_db) ):
+    token = bearer.credentials
+    try:
+        if not token:
+            raise credentials_exception
+        payload = jwt.decode(token, str(SECRET_KEY), algorithms=[str(ALGORITHM)])
+        user_id: str = str(payload.get("id"))
+        # You can add more user-related validation here if needed
+        return users_service.get_user_by_id(db, user_id)
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -25,20 +48,6 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-async def get_current_user_dep(token: str | None = Security(oauth2_scheme)):
-    try:
-        if not token:
-            raise credentials_exception
-        payload = jwt.decode(token, str(SECRET_KEY), algorithms=[str(ALGORITHM)])
-        user_id: UUID = UUID(payload.get("id"))
-        # You can add more user-related validation here if needed
-        return user_id
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     
 # Function to verify refresh token
 async def validate_refresh_token(refresh_token: str) -> Union[str, None]:

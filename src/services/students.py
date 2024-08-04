@@ -29,7 +29,6 @@ def create_student(student: StudentBaseSchema, db: Session) -> Student:
         db.commit()
         db.refresh(new_student)
         return new_student
-    
     except SQLAlchemyError as e:
         db.rollback()
         raise Exception(f"Failed to create student: {e}")
@@ -54,15 +53,15 @@ def get_filtered_students(db: Session, filters: dict) -> List[Student]:
         Exception: If there is an unexpected error during the query.
     """
     query = db.query(Student)
-
-    for attribute, value in filters.items():
-        if value is not None:
-            try:
+    try:
+        for attribute, value in filters.items():
+            if value is not None:
                 query = query.filter(getattr(Student, attribute) == value)
-            except AttributeError:
-                raise ValueError(f"Invalid attribute for filtering: {attribute}")
-    
-    return query.all()
+        return query.all()
+    except AttributeError as e:
+        raise ValueError(f"Invalid attribute for filtering: {e}")
+    except Exception as e:
+        raise Exception(f"An unexpected error occurred: {e}")
 
 
 def get_student_by_id(db: Session, student_id: str) -> Student:
@@ -84,7 +83,6 @@ def get_student_by_id(db: Session, student_id: str) -> Student:
         if student is None:
             raise HTTPException(status_code=404, detail="Student not found")
         return student
-    
     except SQLAlchemyError as error:
         raise Exception(f"Database error occurred: {error}")
     
@@ -109,7 +107,6 @@ def delete_student(db: Session, student_id: str) -> None:
             raise HTTPException(status_code=404, detail="Student not found")
         db.delete(student)
         db.commit()
-        
     except SQLAlchemyError as error:
         db.rollback()
         raise Exception(f"Database error occurred: {error}")
@@ -135,21 +132,18 @@ def update_student_by_id(db: Session, student_id: str, update_data: StudentBaseS
     """
     try:
         student = db.query(Student).filter(Student.id == student_id).first()
-
         if student is None:
             raise HTTPException(status_code=404, detail="Student not found")
-
         for key, value in update_data.dict(exclude_unset=True).items():
             if value is not None:
                 setattr(student, key, value)
-
         db.commit()
         db.refresh(student)
         return student
-
     except SQLAlchemyError as error:
         db.rollback()
         raise Exception(f"Database error occurred: {error}")
     
     except Exception as error:
         raise Exception(f"An unexpected error occurred: {error}")
+

@@ -23,11 +23,14 @@ def create_class(class_data: ClassBaseSchema, db: Session) -> Class:
     Raises:
         Exception: If class creation fails.
     """
-    new_class = Class(**class_data.dict())
-    db.add(new_class)
-    db.commit()
-    db.refresh(new_class)
-    return new_class
+    try:
+        new_class = Class(**class_data.dict())
+        db.add(new_class)
+        db.commit()
+        db.refresh(new_class)
+        return new_class
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def get_filtered_classs(db: Session, filters: dict[str, Any]) -> List[Class]:
@@ -56,7 +59,10 @@ def get_filtered_classs(db: Session, filters: dict[str, Any]) -> List[Class]:
             except AttributeError as error:
                 raise ValueError(f"Invalid attribute for filtering: {error}")
 
-    return query.all()
+    try:
+        return query.all()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def get_class_by_id(db: Session, class_id: str) -> Class:
@@ -73,10 +79,13 @@ def get_class_by_id(db: Session, class_id: str) -> Class:
     Raises:
         HTTPException: If the class is not found or if a database error occurs.
     """
-    class_obj = db.query(Class).get(class_id)
-    if class_obj is None:
-        raise HTTPException(status_code=404, detail="Class not found")
-    return class_obj
+    try:
+        class_obj = db.query(Class).get(class_id)
+        if class_obj is None:
+            raise HTTPException(status_code=404, detail="Class not found")
+        return class_obj
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def delete_class_(db: Session, class_id: str) -> None:
@@ -90,13 +99,16 @@ def delete_class_(db: Session, class_id: str) -> None:
     Raises:
         HTTPException: If the class is not found or if a database error occurs.
     """
-    class_to_delete = db.query(Class).get(class_id)
+    try:
+        class_to_delete = db.query(Class).get(class_id)
 
-    if class_to_delete is None:
-        raise HTTPException(status_code=404, detail="Class not found")
+        if class_to_delete is None:
+            raise HTTPException(status_code=404, detail="Class not found")
 
-    db.delete(class_to_delete)
-    db.commit()
+        db.delete(class_to_delete)
+        db.commit()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def update_class(db: Session, class_id: str, update_data: ClassBaseSchema) -> Class:
@@ -114,16 +126,20 @@ def update_class(db: Session, class_id: str, update_data: ClassBaseSchema) -> Cl
     Raises:
         HTTPException: If the class is not found or if a database error occurs.
     """
-    class_obj = db.query(Class).get(class_id)
+    try:
+        class_obj = db.query(Class).get(class_id)
 
-    if class_obj is None:
-        raise HTTPException(status_code=404, detail="Class not found")
+        if class_obj is None:
+            raise HTTPException(status_code=404, detail="Class not found")
 
-    for field, value in update_data.dict(exclude_unset=True).items():
-        if value is not None:
-            setattr(class_obj, field, value)
+        for field, value in update_data.dict(exclude_unset=True).items():
+            if value is not None:
+                setattr(class_obj, field, value)
 
-    db.commit()
-    db.refresh(class_obj)
+        db.commit()
+        db.refresh(class_obj)
 
-    return class_obj
+        return class_obj
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

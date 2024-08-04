@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from src.config.settings import SessionLocal
+from src.models.users import User
 from src.schemas.auth import  LoginResponse
 from src.services.auth import service_login_for_access_token
 from src.util.auth import get_current_user_dep
@@ -17,6 +18,7 @@ router = APIRouter(
     tags=["Auth",],
     responses={404: {"description": "Not found"}},
 )
+
 
 
 class OAuth2PasswordRequestFormCustom:
@@ -51,7 +53,7 @@ async def login_authorization(form_data: Annotated[OAuth2PasswordRequestFormCust
 
 # Endpoint that takes token and returns user data
 @router.get("/me")
-async def read_users_me(user_id: Annotated[UUID, Depends(get_current_user_dep)]):
+async def me(user: Annotated[User, Depends(get_current_user_dep)]):
     """
     Get Current User
 
@@ -61,4 +63,4 @@ async def read_users_me(user_id: Annotated[UUID, Depends(get_current_user_dep)])
     Returns:
         UserOutput: User Output
     """
-    return user_id
+    return user

@@ -48,19 +48,20 @@ def get_filtered_majors(db: Session, filters: dict[str, Any]) -> List[Major]:
     Returns:
         List[Major]: A list of Major objects that match the given filters.
     """
-    query = db.query(Major)
+    try:
+        query = db.query(Major)
 
-    for attribute, value in filters.items():
-        if value is not None:
-            try:
+        for attribute, value in filters.items():
+            if value is not None:
                 if attribute == 'name':
                     query = query.filter(getattr(Major, attribute).like(f"%{value}%"))
                 else:
                     query = query.filter(getattr(Major, attribute) == value)
-            except AttributeError as error:
-                raise ValueError(f"Invalid attribute for filtering: {error}")
 
-    return query.all()
+        return query.all()
+
+    except SQLAlchemyError as error:
+        raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
 
 
 def get_major_by_id(db: Session, major_id: str) -> Major:
@@ -83,11 +84,11 @@ def get_major_by_id(db: Session, major_id: str) -> Major:
             raise HTTPException(status_code=404, detail="Major not found")
         return major
     
-    except SQLAlchemyError:
-        raise Exception("Database error occurred")
+    except SQLAlchemyError as error:
+        raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
     
-    except Exception:
-        raise Exception("An unexpected error occurred")
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {error}")
 
 
 def delete_major_by_id(db: Session, major_id: str) -> None:
@@ -147,3 +148,4 @@ def update_major_by_id(db: Session, major_id: str, update_data: MajorBaseSchema)
     except SQLAlchemyError as error:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
+

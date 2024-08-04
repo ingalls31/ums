@@ -75,10 +75,13 @@ def get_point_by_id(db: Session, point_id: str) -> Point:
     Raises:
         HTTPException: If the point is not found or if a database error occurs.
     """
-    point = db.query(Point).get(point_id)
-    if point is None:
-        raise HTTPException(status_code=404, detail="Point not found")
-    return point
+    try:
+        point = db.query(Point).get(point_id)
+        if point is None:
+            raise HTTPException(status_code=404, detail="Point not found")
+        return point
+    except SQLAlchemyError:
+        raise HTTPException(status_code=500, detail="Database error occurred")
 
 
 def delete_point(db: Session, point_id: str) -> None:
@@ -136,3 +139,4 @@ def update_point(db: Session, point_id: str, update_data: PointBaseSchema) -> Po
     except SQLAlchemyError as error:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
+

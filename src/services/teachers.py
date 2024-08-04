@@ -30,7 +30,6 @@ def create_teacher(teacher_data: TeacherBaseSchema, db: Session) -> Teacher:
         db.commit()
         db.refresh(new_teacher)
         return new_teacher
-    
     except SQLAlchemyError as error:
         db.rollback()
         raise Exception("Failed to create teacher")
@@ -53,16 +52,19 @@ def get_filtered_teachers(db: Session, filters: dict[str, Any]) -> List[Teacher]
     Raises:
         ValueError: If an invalid attribute is used for filtering.
     """
-    query = db.query(Teacher)
+    try:
+        query = db.query(Teacher)
 
-    for attribute, value in filters.items():
-        if value is not None:
-            try:
-                query = query.filter(getattr(Teacher, attribute) == value)
-            except AttributeError:
-                raise ValueError(f"Invalid attribute for filtering: {attribute}")
-    
-    return query.all()
+        for attribute, value in filters.items():
+            if value is not None:
+                try:
+                    query = query.filter(getattr(Teacher, attribute) == value)
+                except AttributeError:
+                    raise ValueError(f"Invalid attribute for filtering: {attribute}")
+
+        return query.all()
+    except SQLAlchemyError as error:
+        raise Exception("Failed to get filtered teachers")
 
 
 def get_teacher_by_id(db: Session, teacher_id: str) -> Teacher:
@@ -84,9 +86,8 @@ def get_teacher_by_id(db: Session, teacher_id: str) -> Teacher:
         if teacher is None:
             raise HTTPException(status_code=404, detail="Teacher not found")
         return teacher
-    
     except SQLAlchemyError as error:
-        raise Exception("Database error occurred: {}".format(error))
+        raise Exception("Failed to get teacher by ID")
 
 
 def delete_teacher(db: Session, teacher_id: str) -> None:
@@ -106,7 +107,6 @@ def delete_teacher(db: Session, teacher_id: str) -> None:
             raise HTTPException(status_code=404, detail="Teacher not found")
         db.delete(teacher)
         db.commit()
-        
     except SQLAlchemyError as error:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
@@ -140,7 +140,7 @@ def update_teacher(db: Session, teacher_id: str, update_data: TeacherBaseSchema)
         db.commit()
         db.refresh(teacher)
         return teacher
-
     except SQLAlchemyError as error:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
+
