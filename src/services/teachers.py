@@ -4,7 +4,7 @@ from pydantic import EmailStr
 
 from sqlalchemy.orm import Session
 
-from src.models.users import Teacher
+from src.models.users import Teacher, User
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.schemas.teachers import TeacherBaseSchema
@@ -67,7 +67,7 @@ def get_filtered_teachers(db: Session, filters: dict[str, Any]) -> List[Teacher]
         raise Exception("Failed to get filtered teachers")
 
 
-def get_teacher_by_id(db: Session, teacher_id: str) -> Teacher:
+def get_teacher_by_id(db: Session, teacher_id: str, user: User) -> Teacher:
     """
     Get a teacher from the database by their ID.
 
@@ -82,7 +82,14 @@ def get_teacher_by_id(db: Session, teacher_id: str) -> Teacher:
         HTTPException: If the teacher is not found or if a database error occurs.
     """
     try:
-        teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+        if user.super_admin:
+            teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+        else:
+            teacher = db.query(Teacher).filter(
+                Teacher.id == teacher_id, 
+                Teacher.user == user.id
+            ).first()
+
         if teacher is None:
             raise HTTPException(status_code=404, detail="Teacher not found")
         return teacher
@@ -112,7 +119,7 @@ def delete_teacher(db: Session, teacher_id: str) -> None:
         raise HTTPException(status_code=500, detail=f"Database error occurred: {error}")
 
 
-def update_teacher(db: Session, teacher_id: str, update_data: TeacherBaseSchema) -> Teacher:
+def update_teacher(db: Session, teacher_id: str, update_data: TeacherBaseSchema, user: User) -> Teacher:
     """
     Update a teacher in the database by their ID.
 
@@ -128,7 +135,14 @@ def update_teacher(db: Session, teacher_id: str, update_data: TeacherBaseSchema)
         HTTPException: If the teacher is not found or if a database error occurs.
     """
     try:
-        teacher = db.query(Teacher).get(teacher_id)
+        if user.super_admin:
+            teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+        else:
+            teacher = db.query(Teacher).filter(
+                Teacher.id == teacher_id, 
+                Teacher.user == user.id
+            ).first()
+
 
         if teacher is None:
             raise HTTPException(status_code=404, detail="Teacher not found")

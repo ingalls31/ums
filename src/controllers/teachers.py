@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
+from src.models.users import User
 from src.schemas.teachers import TeacherBaseSchema, TeacherSchema
+from src.util.auth import current_admin
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session
 from src.services import teachers as teachers_service
@@ -19,6 +21,7 @@ router = APIRouter(
 @router.post("/", response_model=TeacherSchema)
 def create_teacher(
     teacher_data: TeacherBaseSchema,
+    user: Annotated[User, Depends(current_admin)], 
     db: Session = Depends(get_db)
 ):
     """
@@ -36,6 +39,7 @@ def create_teacher(
 
 @router.get("/", response_model=List[TeacherSchema])
 def get_teachers(
+    user: Annotated[User, Depends(current_admin)], 
     db: Session = Depends(get_db),
     teacher_code: Optional[str] = Query(None, description="Filter by teacher code"),
 ):
@@ -56,6 +60,7 @@ def get_teachers(
 
 @router.get("/{teacher_id}", response_model=TeacherSchema)
 def get_teacher(
+    user: Annotated[User, Depends(current_admin)], 
     teacher_id: str,
     db: Session = Depends(get_db),
 ) -> TeacherSchema:
@@ -69,14 +74,17 @@ def get_teacher(
     Returns:
         TeacherSchema: The teacher object with the given ID.
     """
-    teacher = teachers_service.get_teacher_by_id(db, teacher_id)
+    teacher = teachers_service.get_teacher_by_id(db, teacher_id, user)
     if teacher is None:
         raise HTTPException(status_code=404, detail="Teacher not found")
     return teacher
 
 
 @router.delete("/{teacher_id}", status_code=204)
-def delete_teacher(teacher_id: str, db: Session = Depends(get_db)) -> None:
+def delete_teacher(
+    user: Annotated[User, Depends(current_admin)], 
+    teacher_id: str, 
+    db: Session = Depends(get_db)) -> None:
     """
     Delete a teacher by their ID.
 
@@ -94,7 +102,11 @@ def delete_teacher(teacher_id: str, db: Session = Depends(get_db)) -> None:
 
 
 @router.patch("/{teacher_id}", response_model=TeacherBaseSchema)
-def update_teacher(teacher_id: str, teacher_data: TeacherBaseSchema, db: Session = Depends(get_db)):
+def update_teacher(
+    user: Annotated[User, Depends(current_admin)], 
+    teacher_id: str, 
+    teacher_data: TeacherBaseSchema, 
+    db: Session = Depends(get_db)):
     """
     Update a teacher by their ID.
 
@@ -106,5 +118,5 @@ def update_teacher(teacher_id: str, teacher_data: TeacherBaseSchema, db: Session
     Returns:
         TeacherBaseSchema: The updated teacher object.
     """
-    updated_teacher = teachers_service.update_teacher(db, teacher_id, teacher_data)
+    updated_teacher = teachers_service.update_teacher(db, teacher_id, teacher_data, user)
     return updated_teacher

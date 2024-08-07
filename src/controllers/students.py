@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
+from src.models.users import User
 from src.schemas.students import StudentBaseSchema, StudentSchema
+from src.util.auth import current_admin, current_user
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session
 from src.services import students as students_service
@@ -19,6 +21,7 @@ router = APIRouter(
 @router.post("/", response_model=StudentSchema)
 def create_student(
     student_data: StudentBaseSchema,
+    user: Annotated[User, Depends(current_admin)], 
     db: Session = Depends(get_db)
 ):
     """
@@ -37,6 +40,7 @@ def create_student(
 
 @router.get("/", response_model=List[StudentSchema])
 def get_students(
+    user: Annotated[User, Depends(current_admin)], 
     db: Session = Depends(get_db),
     code: Optional[str] = Query(None, description="Filter by code"),
 ):
@@ -52,11 +56,13 @@ def get_students(
     """
     filters = {"code": code}
     students = students_service.get_filtered_students(db, filters)
+        
     return students
 
 
 @router.get("/{student_id}", response_model=StudentSchema)
 def get_student(
+    user: Annotated[User, Depends(current_user)], 
     student_id: str,
     db: Session = Depends(get_db),
 ) -> StudentSchema:
@@ -70,14 +76,18 @@ def get_student(
     Returns:
         StudentSchema: The student object with the given ID.
     """
-    student = students_service.get_student_by_id(db, student_id)
+    student = students_service.get_student_by_id(db, student_id, user)
     if student is None:
         raise HTTPException(status_code=404, detail="Student not found")
     return student
 
 
 @router.delete("/{student_id}", status_code=204)
-def delete_student(student_id: str, db: Session = Depends(get_db)):
+def delete_student(
+    user: Annotated[User, Depends(current_admin)], 
+    student_id: str, 
+    db: Session = Depends(get_db)
+):
     """
     Delete a student by their ID.
 
@@ -95,7 +105,12 @@ def delete_student(student_id: str, db: Session = Depends(get_db)):
 
 
 @router.patch("/{student_id}", response_model=StudentBaseSchema)
-def update_student(student_id: str, data: StudentBaseSchema, db: Session = Depends(get_db)):
+def update_student(
+    student_id: str, 
+    user: Annotated[User, Depends(current_user)], 
+    data: StudentBaseSchema, 
+    db: Session = Depends(get_db)
+):
     """
     Update a student by their ID.
 
@@ -107,5 +122,5 @@ def update_student(student_id: str, data: StudentBaseSchema, db: Session = Depen
     Returns:
         StudentBaseSchema: The updated student object.
     """
-    updated_student = students_service.update_student(db, student_id, data)
+    updated_student = students_service.update_student(db, student_id, data, user)
     return updated_student

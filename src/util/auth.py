@@ -26,7 +26,7 @@ security = HTTPBearer()
 
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
-async def get_current_user_dep(bearer=Depends(security), db: Session = Depends(get_db) ):
+def current_user(bearer=Depends(security), db: Session = Depends(get_db) ):
     token = bearer.credentials
     try:
         if not token:
@@ -41,6 +41,33 @@ async def get_current_user_dep(bearer=Depends(security), db: Session = Depends(g
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+def current_admin(bearer=Depends(security), db: Session = Depends(get_db) ):
+    token = bearer.credentials
+
+    try:
+        if not token:
+            raise credentials_exception
+        payload = jwt.decode(token, str(SECRET_KEY), algorithms=[str(ALGORITHM)])
+        user_id: str = str(payload.get("id"))
+        # You can add more user-related validation here if needed
+        user =  users_service.get_user_by_id(db, user_id)
+        
+        if user.super_admin == False: 
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unauthorized access",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        return user
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)

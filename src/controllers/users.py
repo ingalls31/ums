@@ -1,9 +1,10 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
 from src.schemas.auth import RegisterUser
+from src.util.auth import current_admin
 from src.util.db_dependency import get_db
 from src.services.users import *
 from src.schemas.users import UserBaseSchema, UserSchema
@@ -21,24 +22,27 @@ router = APIRouter(
 
 @router.post("/", response_model=UserSchema)
 def create_user(
-    user: RegisterUser,  # UserSchema object representing the user to be created
-    db: Session = Depends(get_db)  # Dependency injection for the database session
+    register_user: RegisterUser,  # Renamed parameter to clarify its purpose
+    user: Annotated[User, Depends(current_admin)], 
+    db: Session = Depends(get_db),  # Default argument comes first
 ):
     """
     Create a new user.
 
     Args:
-        user (UserSchema): The user object containing the user details.
+        register_user (RegisterUser): The user object containing the user details.
+        admin_user (User): The user object representing the current admin.
         db (Session): The database session.
 
     Returns:
         UserSchema: The created user object.
     """
-    return auth_service.db_signup_users(user, db)
+    return auth_service.db_signup_users(register_user, db)
 
 
 @router.get("/", response_model=List[UserSchema])
 def get_all_users(
+    user: Annotated[User, Depends(current_admin)], 
     db: Session = Depends(get_db),  # Dependency injection for the database session
     email: Optional[str] = Query(None, description="Filter by email"),  # Query parameter for filtering by email
     gender: Optional[str] = Query(None, description="Filter by gender"),  # Query parameter for filtering by gender
@@ -71,7 +75,10 @@ def get_all_users(
 
 
 @router.get("/{user_id}", response_model=UserSchema)
-def get_user(user_id: str, db: Session = Depends(get_db)):
+def get_user(
+    user_id: str,
+    user: Annotated[User, Depends(current_admin)], 
+    db: Session = Depends(get_db)):
     """
     Get a user by their ID.
 
@@ -87,7 +94,10 @@ def get_user(user_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/{user_id}", status_code=204)
-def delete_user(user_id: str, db: Session = Depends(get_db)):
+def delete_user(
+    user_id: str,
+    user: Annotated[User, Depends(current_admin)], 
+    db: Session = Depends(get_db)):
     """
     Delete a user by their ID.
 
@@ -107,7 +117,11 @@ def delete_user(user_id: str, db: Session = Depends(get_db)):
 
 
 @router.patch("/{user_id}", response_model=UserBaseSchema)
-def update_user(user_id: str, data: UserBaseSchema, db: Session = Depends(get_db)):
+def update_user(
+    user_id: str, 
+    user: Annotated[User, Depends(current_admin)], 
+    data: UserBaseSchema, 
+    db: Session = Depends(get_db)):
     """
     Update a user by their ID.
 

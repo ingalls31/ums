@@ -13,7 +13,7 @@ from src.config import settings
 
 from src.models.users import User
 from src.schemas.auth import TokenData, RegisterUser
-from src.util.auth import get_password_hash, verify_password, credentials_exception, create_refresh_token, validate_refresh_token, get_current_user_dep
+from src.util.auth import get_password_hash, verify_password, credentials_exception, create_refresh_token, validate_refresh_token, current_user
 from src.util.db_dependency import get_db
 
 # to get a string like this run:
@@ -277,7 +277,7 @@ async def gpt_tokens_service(grant_type: str = Form(...), refresh_token: Optiona
 
     # Initial token generation flow
     elif grant_type == "authorization_code":
-        user_id = await get_current_user_dep(code) 
+        user_id = await current_user(code) 
         if not user_id:
             raise credentials_exception
     else:

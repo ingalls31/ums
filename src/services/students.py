@@ -4,7 +4,7 @@ from pydantic import EmailStr
 
 from sqlalchemy.orm import Session
 
-from src.models.users import Student
+from src.models.users import Student, User
 from src.schemas.students import StudentBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -64,7 +64,7 @@ def get_filtered_students(db: Session, filters: dict) -> List[Student]:
         raise Exception(f"An unexpected error occurred: {e}")
 
 
-def get_student_by_id(db: Session, student_id: str) -> Student:
+def get_student_by_id(db: Session, student_id: str, user: User) -> Student:
     """
     Get a student from the database by their ID.
 
@@ -79,7 +79,14 @@ def get_student_by_id(db: Session, student_id: str) -> Student:
         HTTPException: If the student is not found or if a database error occurs.
     """
     try:
-        student = db.query(Student).filter(Student.id == student_id).first()
+        if user.super_admin:
+            student = db.query(Student).filter(Student.id == student_id).first()
+        else:
+            student = db.query(Student).filter(
+                Student.id == student_id,
+                Student.user == user.id
+            ).first()
+
         if student is None:
             raise HTTPException(status_code=404, detail="Student not found")
         return student
@@ -115,7 +122,7 @@ def delete_student(db: Session, student_id: str) -> None:
         raise Exception(f"An unexpected error occurred: {error}")
 
 
-def update_student_by_id(db: Session, student_id: str, update_data: StudentBaseSchema) -> Student:
+def update_student_by_id(db: Session, student_id: str, update_data: StudentBaseSchema, user: User) -> Student:
     """
     Update a student in the database by their ID.
 
@@ -131,7 +138,14 @@ def update_student_by_id(db: Session, student_id: str, update_data: StudentBaseS
         HTTPException: If the student is not found or if a database error occurs.
     """
     try:
-        student = db.query(Student).filter(Student.id == student_id).first()
+        if user.super_admin:
+            student = db.query(Student).filter(Student.id == student_id).first()
+        else:
+            student = db.query(Student).filter(
+                Student.id == student_id,
+                Student.user == user.id
+            ).first()
+
         if student is None:
             raise HTTPException(status_code=404, detail="Student not found")
         for key, value in update_data.dict(exclude_unset=True).items():

@@ -8,7 +8,7 @@ from src.config.settings import SessionLocal
 from src.models.users import User
 from src.schemas.auth import  LoginResponse
 from src.services.auth import service_login_for_access_token
-from src.util.auth import get_current_user_dep
+from src.util.auth import current_user
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session
 from src.services import subjects as subjects_service
@@ -53,7 +53,7 @@ async def login_authorization(form_data: Annotated[OAuth2PasswordRequestFormCust
 
 # Endpoint that takes token and returns user data
 @router.get("/me")
-async def me(user: Annotated[User, Depends(get_current_user_dep)]):
+async def me(user: Annotated[User, Depends(current_user)]):
     """
     Get Current User
 
