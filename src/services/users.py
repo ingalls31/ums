@@ -125,7 +125,7 @@ def delete_user_by_id(db: Session, user_id: str) -> None:
         raise Exception(f"An unexpected error occurred: {e}")
 
 
-def update_user_by_id(db: Session, user_id: str, update_data: UserBaseSchema) -> User:
+def update_user_by_id(db: Session, user_id: str, update_data: UserBaseSchema, user: User) -> User:
     """
     Update a user in the database by their ID.
 
@@ -141,7 +141,13 @@ def update_user_by_id(db: Session, user_id: str, update_data: UserBaseSchema) ->
         HTTPException: If the user is not found or if a database error occurs.
     """
     try:
-        user = db.query(User).filter(User.id == user_id).first()
+        if user.super_admin:
+            user = db.query(User).filter(User.id == user_id).first()
+        else:
+            user = db.query(User).filter(
+                User.id == user_id,
+                User.user == user.id
+            ).first()
 
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")

@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
 from src.schemas.auth import RegisterUser
-from src.util.auth import current_admin
+from src.util.auth import current_admin, current_user
 from src.util.db_dependency import get_db
 from src.services.users import *
 from src.schemas.users import UserBaseSchema, UserSchema
@@ -96,7 +96,7 @@ def get_user(
 @router.delete("/{user_id}", status_code=204)
 def delete_user(
     user_id: str,
-    user: Annotated[User, Depends(current_admin)], 
+    user: Annotated[User, Depends(current_user)], 
     db: Session = Depends(get_db)):
     """
     Delete a user by their ID.
@@ -134,4 +134,4 @@ def update_user(
         UserBaseSchema: The updated user object.
     """
     # Update the user with the given ID in the database with the provided data
-    return users_service.update_user_by_id(db, user_id, data)
+    return users_service.update_user_by_id(db, user_id, data, user)
