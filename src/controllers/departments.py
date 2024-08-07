@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
+from src.models.users import User
 from src.schemas.departments import DepartmentBaseSchema, DepartmentSchema
+from src.util.auth import current_admin
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session
 from src.services import departments as departments_service
@@ -18,6 +20,7 @@ router = APIRouter(
 
 @router.post("/", response_model=DepartmentSchema)
 def create_department(
+    user: Annotated[User, Depends(current_admin)], 
     department_data: DepartmentBaseSchema,
     db: Session = Depends(get_db)
 ):
@@ -37,6 +40,7 @@ def create_department(
 
 @router.get("/", response_model=List[DepartmentSchema])
 def get_departments(
+    user: Annotated[User, Depends(current_admin)], 
     db: Session = Depends(get_db),
     name: Optional[str] = Query(None, description="Filter by name"),
 ):
@@ -57,6 +61,7 @@ def get_departments(
 
 @router.get("/{department_id}", response_model=DepartmentSchema)
 def get_department(
+    user: Annotated[User, Depends(current_admin)], 
     department_id: str,
     db: Session = Depends(get_db),
 ) -> DepartmentSchema:
@@ -77,7 +82,11 @@ def get_department(
 
 
 @router.delete("/{department_id}", status_code=204)
-def delete_department(department_id: str, db: Session = Depends(get_db)) -> None:
+def delete_department(
+    user: Annotated[User, Depends(current_admin)], 
+    department_id: str, 
+    db: Session = Depends(get_db)
+) -> None:
     """
     Delete a department by its ID.
 
@@ -95,7 +104,12 @@ def delete_department(department_id: str, db: Session = Depends(get_db)) -> None
 
 
 @router.patch("/{department_id}", response_model=DepartmentBaseSchema)
-def update_department(department_id: str, data: DepartmentBaseSchema, db: Session = Depends(get_db)):
+def update_department(
+    user: Annotated[User, Depends(current_admin)], 
+    department_id: str, 
+    data: DepartmentBaseSchema, 
+    db: Session = Depends(get_db)
+):
     """
     Update a department by its ID.
 

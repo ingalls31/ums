@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
+from src.models.users import User
 from src.schemas.majors import MajorBaseSchema, MajorSchema
+from src.util.auth import current_admin
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session
 from src.services import majors as majors_service
@@ -19,6 +21,7 @@ router = APIRouter(
 
 @router.post("/", response_model=MajorSchema)
 def create_major(
+    user: Annotated[User, Depends(current_admin)], 
     major_data: MajorBaseSchema,
     db: Session = Depends(get_db)
 ) -> MajorSchema:
@@ -69,7 +72,11 @@ def get_major_by_id(
 
 
 @router.delete("/{major_id}", status_code=204)
-def delete_major(major_id: str, db: Session = Depends(get_db)) -> None:
+def delete_major(
+    user: Annotated[User, Depends(current_admin)], 
+    major_id: str, 
+    db: Session = Depends(get_db)
+) -> None:
     """
     Delete a major by its ID.
 
@@ -87,7 +94,12 @@ def delete_major(major_id: str, db: Session = Depends(get_db)) -> None:
 
 
 @router.patch("/{major_id}", response_model=MajorBaseSchema)
-def update_major(major_id: str, data: MajorBaseSchema, db: Session = Depends(get_db)):
+def update_major(
+    user: Annotated[User, Depends(current_admin)], 
+    major_id: str, 
+    data: MajorBaseSchema, 
+    db: Session = Depends(get_db)
+):
     """
     Update a major by its ID.
 
