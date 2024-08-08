@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
+from src.models.users import User
 from src.schemas.subjects import SubjectBaseSchema, SubjectSchema
+from src.util.auth import current_admin, current_user
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session
 from src.services import subjects as subjects_service
@@ -17,6 +19,7 @@ router = APIRouter(
 
 @router.post("/", response_model=SubjectBaseSchema)
 def create_subject(
+    user: Annotated[User, Depends(current_admin)], 
     subject_data: SubjectBaseSchema,
     db: Session = Depends(get_db)
 ):
@@ -36,6 +39,7 @@ def create_subject(
 
 @router.get("/", response_model=List[SubjectSchema])
 def get_subjects(
+    user: Annotated[User, Depends(current_user)], 
     db: Session = Depends(get_db),
     name: Optional[str] = Query(None, description="Filter by name"),
 ):
@@ -47,6 +51,7 @@ def get_subjects(
 
 @router.get("/{subject_id}", response_model=SubjectSchema)
 def get_subject_by_id(
+    user: Annotated[User, Depends(current_admin)], 
     subject_id: str,
     db: Session = Depends(get_db),
 ) -> SubjectSchema:
@@ -70,7 +75,11 @@ def get_subject_by_id(
 
 
 @router.delete("/{subject_id}", status_code=204)
-def delete_subject(subject_id: str, db: Session = Depends(get_db)) -> None:
+def delete_subject(
+    user: Annotated[User, Depends(current_admin)], 
+    subject_id: str, 
+    db: Session = Depends(get_db)
+) -> None:
     """
     Delete a subject by its ID.
 
@@ -86,6 +95,7 @@ def delete_subject(subject_id: str, db: Session = Depends(get_db)) -> None:
 
 @router.patch("/{subject_id}", response_model=SubjectBaseSchema)
 def update_subject(
+    user: Annotated[User, Depends(current_admin)], 
     subject_id: str,
     data: SubjectBaseSchema,
     db: Session = Depends(get_db),
