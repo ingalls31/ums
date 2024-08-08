@@ -5,6 +5,7 @@ from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from src.models.points import Point
+from src.models.users import User
 from src.schemas.points import PointBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -35,7 +36,11 @@ def create_point(point: PointBaseSchema, db: Session) -> Point:
         raise Exception(f"Failed to create point: {error}")
 
 
-def get_filtered_points(db: Session, filters: dict[str, Any]) -> List[Point]:
+def get_filtered_points(
+    db: Session, 
+    filters: dict[str, Any],
+    user: User,
+) -> List[Point]:
     """
     Get points from the database that match the given filters.
 
@@ -57,11 +62,14 @@ def get_filtered_points(db: Session, filters: dict[str, Any]) -> List[Point]:
                 query = query.filter(getattr(Point, key) == value)
             except AttributeError as error:
                 raise ValueError(f"Invalid attribute for filtering: {error}")
+            
+    if user.super_admin == False:
+        query = query.filter(Point.user_id == user.id)
 
     return query.all()
 
 
-def get_point_by_id(db: Session, point_id: str) -> Point:
+def get_point_by_id(db: Session, point_id: str, user: User) -> Point:
     """
     Get a point from the database by its ID.
 
@@ -77,6 +85,10 @@ def get_point_by_id(db: Session, point_id: str) -> Point:
     """
     try:
         point = db.query(Point).get(point_id)
+        
+        if point.user_id != user.id and user.super_admin == False:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
         if point is None:
             raise HTTPException(status_code=404, detail="Point not found")
         return point

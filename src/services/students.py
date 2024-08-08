@@ -84,7 +84,7 @@ def get_student_by_id(db: Session, student_id: str, user: User) -> Student:
         else:
             student = db.query(Student).filter(
                 Student.id == student_id,
-                Student.user == user.id
+                Student.user_id == user.id
             ).first()
 
         if student is None:
@@ -143,7 +143,7 @@ def update_student_by_id(db: Session, student_id: str, update_data: StudentBaseS
         else:
             student = db.query(Student).filter(
                 Student.id == student_id,
-                Student.user == user.id
+                Student.user_id == user.id
             ).first()
 
         if student is None:

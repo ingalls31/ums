@@ -87,7 +87,7 @@ def get_teacher_by_id(db: Session, teacher_id: str, user: User) -> Teacher:
         else:
             teacher = db.query(Teacher).filter(
                 Teacher.id == teacher_id, 
-                Teacher.user == user.id
+                Teacher.user_id == user.id
             ).first()
 
         if teacher is None:
@@ -140,7 +140,7 @@ def update_teacher(db: Session, teacher_id: str, update_data: TeacherBaseSchema,
         else:
             teacher = db.query(Teacher).filter(
                 Teacher.id == teacher_id, 
-                Teacher.user == user.id
+                Teacher.user_id == user.id
             ).first()
 
 

@@ -146,7 +146,7 @@ def update_user_by_id(db: Session, user_id: str, update_data: UserBaseSchema, us
         else:
             user = db.query(User).filter(
                 User.id == user_id,
-                User.user == user.id
+                User.user_id == user.id
             ).first()
 
         if user is None:

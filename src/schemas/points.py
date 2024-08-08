@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 
 class PointBaseSchema(BaseModel):
     class_id: str
-    user: str
+    user_id: str
     diligence: int 
     test: int 
     practice: int

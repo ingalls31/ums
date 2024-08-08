@@ -13,7 +13,7 @@ class Point(Base):
 
     id = Column(String(length=36), primary_key=True, default=lambda: str(uuid.uuid4()))
     class_id = Column(String, ForeignKey(Class.id, ondelete='CASCADE'), nullable=False)
-    user = Column(String, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
+    user_id = Column(String, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
     diligence = Column(Integer)
     test = Column(Integer)
     practice = Column(Integer)

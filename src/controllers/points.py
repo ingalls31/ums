@@ -60,7 +60,7 @@ def get_points(
         "class_id": class_id,
         "user": user_id,
     }
-    points = points_service.get_filtered_points(db, filters)
+    points = points_service.get_filtered_points(db, filters, user)
     return points
 
 
@@ -80,7 +80,7 @@ def get_point(
     Returns:
         PointSchema: The point object with the given ID.
     """
-    point = points_service.get_point_by_id(db, point_id)
+    point = points_service.get_point_by_id(db, point_id, user)
     if point is None:
         raise HTTPException(status_code=404, detail="Point not found")
     return point
