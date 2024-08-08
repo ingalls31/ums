@@ -14,6 +14,6 @@ class Subject(Base):
     name = Column(String(255), nullable=False, unique=True)
     description = Column(String(255), nullable=True)
     total = Column(Integer, default=0)
-    major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'), nullable=False)
+    major_id = Column(String, ForeignKey(Major.id, ondelete='CASCADE'), nullable=False)
     
     

@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 
 class MajorBaseSchema(BaseModel):
     name: str
-    department: str
+    department_id: str
     description: Optional[str] = None
     total: Optional[int] = None
 

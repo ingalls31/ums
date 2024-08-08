@@ -4,8 +4,8 @@ from pydantic import BaseModel, EmailStr
 
 class ClassBaseSchema(BaseModel):
     name: str
-    teacher: str 
-    subject: str
+    teacher_id: str 
+    subject_id: str
     description: Optional[str]
     total: int
 

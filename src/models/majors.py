@@ -14,4 +14,4 @@ class Major(Base):
     name = Column(String(length=30))
     total = Column(Integer)
     description = Column(String(length=250))
-    department = Column(String, ForeignKey(Department.id, ondelete='CASCADE'), nullable=False)
+    department_id = Column(String, ForeignKey(Department.id, ondelete='CASCADE'), nullable=False)

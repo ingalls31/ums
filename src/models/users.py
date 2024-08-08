@@ -28,7 +28,7 @@ class Student(Base):
     
     id = Column(String(length=36), primary_key=True, default=lambda: str(uuid.uuid4()))
     code = Column(String(length=10))
-    user = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
+    user_id = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
     gpa = Column(Integer)
     major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
     
@@ -38,6 +38,6 @@ class Teacher(Base):
     
     id = Column(String(length=36), primary_key=True, default=lambda: str(uuid.uuid4()))
     code = Column(String(length=10))
-    user = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
+    user_id = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
     major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
     
