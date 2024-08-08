@@ -42,7 +42,7 @@ def create_point(
 def get_points(
     user: Annotated[User, Depends(current_user)], 
     db: Session = Depends(get_db),
-    subject_id: Optional[str] = Query(None),
+    class_id: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
 ) -> List[PointSchema]:
     """
@@ -50,14 +50,14 @@ def get_points(
 
     Args:
         db (Session): The database session.
-        subject_id (str, optional): The ID of the subject to filter by.
+        class_id (str, optional): The ID of the subject to filter by.
         user_id (str, optional): The ID of the user to filter by.
 
     Returns:
         List[PointSchema]: A list of PointSchema objects representing the retrieved points.
     """
     filters = {
-        "subject": subject_id,
+        "class_id": class_id,
         "user": user_id,
     }
     points = points_service.get_filtered_points(db, filters)
