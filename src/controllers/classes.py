@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from src.config.settings import SessionLocal
+from src.models.users import User
 from src.schemas.classes import ClassBaseSchema, ClassSchema
+from src.util.auth import current_admin, current_user
 from src.util.db_dependency import get_db
 from sqlalchemy.orm import Session
 from src.services import classes as classes_service
@@ -18,6 +20,7 @@ router = APIRouter(
 
 @router.post("/", response_model=ClassSchema)
 def create_class(
+    user: Annotated[User, Depends(current_admin)], 
     class_data: ClassBaseSchema,
     db: Session = Depends(get_db)
 ) -> ClassSchema:
@@ -37,6 +40,7 @@ def create_class(
 
 @router.get("/", response_model=List[ClassSchema])
 def get_classes(
+    user: Annotated[User, Depends(current_user)], 
     db: Session = Depends(get_db),
     name: Optional[str] = Query(None, description="Filter by name"),
 ) -> List[ClassSchema]:
@@ -57,6 +61,7 @@ def get_classes(
 
 @router.get("/{class_id}", response_model=ClassSchema)
 def get_class_by_id(
+    user: Annotated[User, Depends(current_user)], 
     class_id: str,
     db: Session = Depends(get_db),
 ) -> ClassSchema:
@@ -80,7 +85,11 @@ def get_class_by_id(
 
 
 @router.delete("/{class_id}", status_code=204)
-def delete_class_(class_id: str, db: Session = Depends(get_db)) -> None:
+def delete_class_(
+    user: Annotated[User, Depends(current_admin)], 
+    class_id: str, 
+    db: Session = Depends(get_db)
+) -> None:
     """
     Delete a class by its ID.
 
@@ -95,6 +104,7 @@ def delete_class_(class_id: str, db: Session = Depends(get_db)) -> None:
 
 @router.patch("/{class_id}", response_model=ClassBaseSchema)
 def update_class(
+    user: Annotated[User, Depends(current_admin)], 
     class_id: str,
     data: ClassBaseSchema,
     db: Session = Depends(get_db),
