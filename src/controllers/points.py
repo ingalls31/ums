@@ -43,7 +43,8 @@ def get_points(
     user: Annotated[User, Depends(current_user)], 
     db: Session = Depends(get_db),
     class_id: Optional[str] = Query(None),
-    user_id: Optional[str] = Query(None),
+    student_id: Optional[str] = Query(None),
+    teacher_id: Optional[str] = Query(None),
 ) -> List[PointSchema]:
     """
     Retrieves all points from the database, optionally filtered by subject and user IDs.
@@ -51,14 +52,15 @@ def get_points(
     Args:
         db (Session): The database session.
         class_id (str, optional): The ID of the subject to filter by.
-        user_id (str, optional): The ID of the user to filter by.
+        student_id (str, optional): The ID of the student_id to filter by.
 
     Returns:
         List[PointSchema]: A list of PointSchema objects representing the retrieved points.
     """
     filters = {
         "class_id": class_id,
-        "user": user_id,
+        "student_id": student_id,
+        "teacher_id": teacher_id,
     }
     points = points_service.get_filtered_points(db, filters, user)
     return points
@@ -125,5 +127,5 @@ def update_point(
     Returns:
         PointBaseSchema: The updated point object.
     """
-    updated_point = points_service.update_point(db, point_id, data)
+    updated_point = points_service.update_point(db, point_id, data, user)
     return updated_point

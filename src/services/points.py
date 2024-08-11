@@ -5,7 +5,7 @@ from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from src.models.points import Point
-from src.models.users import User
+from src.models.users import Teacher, User
 from src.schemas.points import PointBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -119,7 +119,7 @@ def delete_point(db: Session, point_id: str) -> None:
         raise HTTPException(status_code=500, detail="Database error occurred")
 
 
-def update_point(db: Session, point_id: str, update_data: PointBaseSchema) -> Point:
+def update_point(db: Session, point_id: str, update_data: PointBaseSchema, user: User) -> Point:
     """
     Update a point in the database by its ID.
 
@@ -135,7 +135,11 @@ def update_point(db: Session, point_id: str, update_data: PointBaseSchema) -> Po
         HTTPException: If the point is not found or if a database error occurs.
     """
     try:
-        point = db.query(Point).get(point_id)
+        teacher = db.query(Teacher).filter(Teacher.user_id == user.id).first()
+        if teacher is None:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        
+        point = db.query(Point).filter(Point.id == point_id, Point.teacher_id == teacher.id).first()
 
         if point is None:
             raise HTTPException(status_code=404, detail="Point not found")
