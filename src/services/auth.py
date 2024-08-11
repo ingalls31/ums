@@ -38,7 +38,16 @@ class InvalidUserException(Exception):
 
 
 def get_user(db: Session, email: Union[str, None] = None):
+    """
+    Retrieves a user from the database based on the provided email.
 
+    Args:
+        db (Session): The database session to use for the query.
+        email (Union[str, None], optional): The email of the user to retrieve. Defaults to None.
+
+    Returns:
+        User
+    """
     try:
         if email is None:
             raise InvalidUserException(status_code=404, detail="Email not provided")
@@ -60,6 +69,16 @@ def get_user(db: Session, email: Union[str, None] = None):
 def db_signup_users(
     user_data: RegisterUser, db: Session
 ):
+    """
+    Signs up a new user in the database.
+
+    Args:
+        user_data (RegisterUser): The user data containing the email and password.
+        db (Session): The database session.
+
+    Returns:
+        User
+    """
     # Check if user already exists
     try:
         existing_user_email_query = db.query(User).filter(User.email == user_data.email)
@@ -224,80 +243,4 @@ async def service_login_for_access_token(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def service_signup_users(
-    user_data: RegisterUser, db:  Annotated[Session, Depends(get_db)]
-):
-    """
-    Service function to sign up users.
 
-    Args:
-        user_data (RegisterUser): The user data to be registered.
-        db (Session, optional): The database session. Defaults to Depends(get_db).
-
-    Returns:
-        The result of the user registration.
-
-    Raises:
-        HTTPException: If there is an invalid user exception or any other unforeseen exception.
-    """
-    try:
-        return await db_signup_users(user_data, db)
-    except InvalidUserException as e:
-        # Catch the InvalidUserException and raise an HTTPException
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-    except Exception as e:
-        # Handle other unforeseen exceptions
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-async def gpt_tokens_service(grant_type: str = Form(...), refresh_token: Optional[str] = Form(None), code: Optional[str] = Form(None)):
-    """
-    Generates access and refresh tokens based on the provided grant type.
-
-    Args:
-        grant_type (str): The grant type, either "refresh_token" or "authorization_code".
-        refresh_token (str, optional): The refresh token used for token refresh flow.
-        code (str, optional): The authorization code used for initial token generation flow.
-
-    Returns:
-        dict: A dictionary containing the access token, token type, expiry time, and refresh token.
-
-    Raises:
-        credentials_exception: If the grant type is invalid or the required parameters are missing.
-    """
-    # Token refresh flow
-    if grant_type == "refresh_token":
-        # Check if the refresh token is Present
-        if not refresh_token:
-            raise credentials_exception
-        # Validate the refresh token and client credentials
-        user_id = await validate_refresh_token(refresh_token)
-        if not user_id:
-            raise credentials_exception
-
-    # Initial token generation flow
-    elif grant_type == "authorization_code":
-        user_id = await current_user(code) 
-        if not user_id:
-            raise credentials_exception
-    else:
-        raise credentials_exception
-
-    # Generate access token
-    access_token_expires = timedelta(
-        minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
-    access_token = create_access_token(
-        data={"id": user_id}, expires_delta=access_token_expires)
-
-    # Generate refresh token (you might want to set a longer expiry for this)
-    refresh_token_expires = timedelta(
-        minutes=float(REFRESH_TOKEN_EXPIRE_MINUTES))
-    rotated_refresh_token = create_refresh_token(
-        data={"id": user_id}, expires_delta=refresh_token_expires)
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "expires_in": int(access_token_expires.total_seconds()),
-        "refresh_token": rotated_refresh_token  # Include refresh token in the response
-    }

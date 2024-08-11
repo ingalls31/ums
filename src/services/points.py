@@ -42,7 +42,7 @@ def get_filtered_points(
     user: User,
 ) -> List[Point]:
     """
-    Get points from the database that match the given filters.
+    Retrieves points from the database based on the given filters.
 
     Args:
         db (Session): The database session.
@@ -50,6 +50,7 @@ def get_filtered_points(
             The keys are the attributes of Point to filter on, and the values
             are the values to filter those attributes by. If a value is None,
             it is not included in the filter.
+        user (User): The user object to filter the points by.
 
     Returns:
         List[Point]: A list of Point objects that match the given filters.
@@ -71,11 +72,12 @@ def get_filtered_points(
 
 def get_point_by_id(db: Session, point_id: str, user: User) -> Point:
     """
-    Get a point from the database by its ID.
+    Retrieves a point from the database by its ID.
 
     Args:
         db (Session): The database session.
         point_id (str): The ID of the point to be retrieved.
+        user (User): The user object to filter the points by.
 
     Returns:
         Point: The point object with the given ID.
@@ -98,7 +100,7 @@ def get_point_by_id(db: Session, point_id: str, user: User) -> Point:
 
 def delete_point(db: Session, point_id: str) -> None:
     """
-    Delete a point from the database by its ID.
+    Deletes a point from the database by its ID.
 
     Args:
         db (Session): The database session.
@@ -121,12 +123,13 @@ def delete_point(db: Session, point_id: str) -> None:
 
 def update_point(db: Session, point_id: str, update_data: PointBaseSchema, user: User) -> Point:
     """
-    Update a point in the database by its ID.
+    Updates a point in the database by its ID.
 
     Args:
         db (Session): The database session.
         point_id (str): The ID of the point to be updated.
         update_data (PointBaseSchema): The updated point data.
+        user (User): The user object to filter the points by.
 
     Returns:
         Point: The updated point object if the update is successful.

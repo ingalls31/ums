@@ -21,7 +21,7 @@ def create_class(class_data: ClassBaseSchema, db: Session) -> Class:
         Class: The created class object.
 
     Raises:
-        Exception: If class creation fails.
+        HTTPException: If class creation fails.
     """
     try:
         new_class = Class(**class_data.dict())
@@ -46,6 +46,10 @@ def get_filtered_classs(db: Session, filters: dict[str, Any]) -> List[Class]:
 
     Returns:
         List[Class]: A list of Class objects that match the given filters.
+
+    Raises:
+        ValueError: If an invalid attribute is used for filtering.
+        HTTPException: If a database error occurs.
     """
     query = db.query(Class)
 
