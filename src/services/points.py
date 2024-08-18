@@ -93,7 +93,7 @@ def get_point_by_id(db: Session, point_id: str, user: User) -> Point:
     try:
         point = db.query(Point).get(point_id)
         
-        if point.student_id != user.id and user.super_admin == False:
+        if point.student_id != user.id and user.super_admin == False and point.teacher_id != user.id:
             raise HTTPException(status_code=403, detail="Forbidden")
 
         if point is None:
