@@ -144,7 +144,7 @@ def update_point(db: Session, point_id: str, update_data: PointBaseSchema, user:
     """
     try:
         teacher = db.query(Teacher).filter(Teacher.user_id == user.id).first()
-        if teacher is None:
+        if teacher is None and user.super_admin == False:
             raise HTTPException(status_code=403, detail="Forbidden")
         
         point = db.query(Point).filter(Point.id == point_id, Point.teacher_id == teacher.id).first()

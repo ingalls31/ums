@@ -33,7 +33,7 @@ def create_class(class_data: ClassBaseSchema, db: Session) -> Class:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def get_filtered_classs(db: Session, filters: dict[str, Any]) -> List[Class]:
+def get_filtered_classes(db: Session, filters: dict[str, Any]) -> List[Class]:
     """
     Get classs from the database that match the given filters.
 
@@ -92,7 +92,7 @@ def get_class_by_id(db: Session, class_id: str) -> Class:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def delete_class_(db: Session, class_id: str) -> None:
+def delete_class(db: Session, class_id: str) -> None:
     """
     Delete a class from the database by its ID.
 
