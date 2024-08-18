@@ -45,6 +45,7 @@ def get_points(
     class_id: Optional[str] = Query(None),
     student_id: Optional[str] = Query(None),
     teacher_id: Optional[str] = Query(None),
+    is_teacher: Optional[bool] = Query(None),
 ) -> List[PointSchema]:
     """
     Retrieves all points from the database, optionally filtered by subject and user IDs.
@@ -53,6 +54,7 @@ def get_points(
         db (Session): The database session.
         class_id (str, optional): The ID of the subject to filter by.
         student_id (str, optional): The ID of the student_id to filter by.
+        is_teacher (bool, optional): Whether the user is a teacher or not.
 
     Returns:
         List[PointSchema]: A list of PointSchema objects representing the retrieved points.
@@ -61,6 +63,7 @@ def get_points(
         "class_id": class_id,
         "student_id": student_id,
         "teacher_id": teacher_id,
+        "is_teacher": is_teacher
     }
     points = points_service.get_filtered_points(db, filters, user)
     return points

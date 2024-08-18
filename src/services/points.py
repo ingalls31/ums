@@ -64,8 +64,13 @@ def get_filtered_points(
             except AttributeError as error:
                 raise ValueError(f"Invalid attribute for filtering: {error}")
             
-    if user.super_admin == False:
-        query = query.filter(Point.user_id == user.id)
+    if user.super_admin == True:
+        return query.all()
+        
+    if filters.get('is_teacher') is not None and filters.get('is_teacher') == True:
+        query = query.filter(Point.teacher_id == user.id)
+    else: 
+        query = query.filter(Point.student_id == user.id)
 
     return query.all()
 
@@ -88,7 +93,7 @@ def get_point_by_id(db: Session, point_id: str, user: User) -> Point:
     try:
         point = db.query(Point).get(point_id)
         
-        if point.user_id != user.id and user.super_admin == False:
+        if point.student_id != user.id and user.super_admin == False:
             raise HTTPException(status_code=403, detail="Forbidden")
 
         if point is None:
