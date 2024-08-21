@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.models.subjects import Subject
 from src.schemas.subjects import SubjectBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 
 def create_subject(subject_data: SubjectBaseSchema, db: Session) -> Subject:
@@ -48,7 +49,7 @@ def get_filtered_subjects(db: Session, filters: dict[str, Any]) -> List[Subject]
     Returns:
         List[Subject]: A list of Subject objects that match the given filters.
     """
-    query = db.query(Subject)
+    query = db.query(Subject).filter(Subject.deleted_at.is_(None))
 
     for attribute, value in filters.items():
         if value is not None:
@@ -73,7 +74,7 @@ def get_subject_by_id(db: Session, subject_id: str) -> Subject:
         HTTPException: If the subject is not found or if a database error occurs.
     """
     try:
-        subject = db.query(Subject).get(subject_id)
+        subject = db.query(Subject).filter(Subject.id == subject_id, Subject.deleted_at.is_(None)).first()
         if subject is None:
             raise HTTPException(status_code=404, detail="Subject not found")
         return subject
@@ -96,7 +97,7 @@ def delete_subject(db: Session, subject_id: str) -> None:
         subject = db.query(Subject).get(subject_id)
         if subject is None:
             raise HTTPException(status_code=404, detail="Subject not found")
-        db.delete(subject)
+        subject.deleted_at = datetime.datetime.now()
         db.commit()
 
     except SQLAlchemyError:
@@ -119,7 +120,7 @@ def update_subject(db: Session, subject_id: str, update_data: SubjectBaseSchema)
         HTTPException: If the subject is not found or if a database error occurs.
     """
     try:
-        subject = db.query(Subject).get(subject_id)
+        subject = db.query(Subject).filter(Subject.id == subject_id, Subject.deleted_at.is_(None)).first()
         if subject is None:
             raise HTTPException(status_code=404, detail="Subject not found")
 

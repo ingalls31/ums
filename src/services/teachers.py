@@ -8,6 +8,7 @@ from src.models.users import Teacher, User
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.schemas.teachers import TeacherBaseSchema
+from datetime import datetime
 
 
 def create_teacher(teacher_data: TeacherBaseSchema, db: Session) -> Teacher:
@@ -53,7 +54,7 @@ def get_filtered_teachers(db: Session, filters: dict[str, Any]) -> List[Teacher]
         ValueError: If an invalid attribute is used for filtering.
     """
     try:
-        query = db.query(Teacher)
+        query = db.query(Teacher).filter(Teacher.deleted_at == None)
 
         for attribute, value in filters.items():
             if value is not None:
@@ -83,11 +84,12 @@ def get_teacher_by_id(db: Session, teacher_id: str, user: User) -> Teacher:
     """
     try:
         if user.super_admin:
-            teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+            teacher = db.query(Teacher).filter(Teacher.id == teacher_id, Teacher.deleted_at == None).first()
         else:
             teacher = db.query(Teacher).filter(
                 Teacher.id == teacher_id, 
-                Teacher.user_id == user.id
+                Teacher.user_id == user.id, 
+                Teacher.deleted_at == None
             ).first()
 
         if teacher is None:
@@ -112,7 +114,7 @@ def delete_teacher(db: Session, teacher_id: str) -> None:
         teacher = db.query(Teacher).get(teacher_id)
         if teacher is None:
             raise HTTPException(status_code=404, detail="Teacher not found")
-        db.delete(teacher)
+        teacher.deleted_at = datetime.datetime.now()
         db.commit()
     except SQLAlchemyError as error:
         db.rollback()
@@ -136,11 +138,12 @@ def update_teacher(db: Session, teacher_id: str, update_data: TeacherBaseSchema,
     """
     try:
         if user.super_admin:
-            teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+            teacher = db.query(Teacher).filter(Teacher.id == teacher_id, Teacher.deleted_at == None).first()
         else:
             teacher = db.query(Teacher).filter(
                 Teacher.id == teacher_id, 
-                Teacher.user_id == user.id
+                Teacher.user_id == user.id, 
+                Teacher.deleted_at == None
             ).first()
 
 

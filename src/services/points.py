@@ -8,6 +8,7 @@ from src.models.points import Point
 from src.models.users import Teacher, User
 from src.schemas.points import PointBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 
 def create_point(point: PointBaseSchema, db: Session) -> Point:
@@ -55,7 +56,7 @@ def get_filtered_points(
     Returns:
         List[Point]: A list of Point objects that match the given filters.
     """
-    query = db.query(Point)
+    query = db.query(Point).filter(Point.deleted_at == None)
 
     for key, value in filters.items():
         if value is not None:
@@ -91,7 +92,7 @@ def get_point_by_id(db: Session, point_id: str, user: User) -> Point:
         HTTPException: If the point is not found or if a database error occurs.
     """
     try:
-        point = db.query(Point).get(point_id)
+        point = db.query(Point).filter(Point.id == point_id, Point.deleted_at == None).first()
         
         if point.student_id != user.id and user.super_admin == False and point.teacher_id != user.id:
             raise HTTPException(status_code=403, detail="Forbidden")
@@ -115,10 +116,10 @@ def delete_point(db: Session, point_id: str) -> None:
         HTTPException: If the point is not found or if a database error occurs.
     """
     try:
-        point = db.query(Point).get(point_id)
+        point = db.query(Point).filter(Point.id == point_id, Point.deleted_at == None).first()
         if point is None:
             raise HTTPException(status_code=404, detail="Point not found")
-        db.delete(point)
+        point.deleted_at = datetime.datetime.now()
         db.commit()
 
     except SQLAlchemyError:
@@ -147,7 +148,7 @@ def update_point(db: Session, point_id: str, update_data: PointBaseSchema, user:
         if teacher is None and user.super_admin == False:
             raise HTTPException(status_code=403, detail="Forbidden")
         
-        point = db.query(Point).filter(Point.id == point_id, Point.teacher_id == teacher.id).first()
+        point = db.query(Point).filter(Point.id == point_id, Point.deleted_at == None, Point.teacher_id == teacher.id).first()
 
         if point is None:
             raise HTTPException(status_code=404, detail="Point not found")

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.models.majors import Major
 from src.schemas.majors import MajorBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 
 def create_major(major_data: MajorBaseSchema, db: Session) -> Major:
@@ -49,7 +50,7 @@ def get_filtered_majors(db: Session, filters: dict[str, Any]) -> List[Major]:
         List[Major]: A list of Major objects that match the given filters.
     """
     try:
-        query = db.query(Major)
+        query = db.query(Major).filter(Major.deleted_at.is_(None))
 
         for attribute, value in filters.items():
             if value is not None:
@@ -79,7 +80,7 @@ def get_major_by_id(db: Session, major_id: str) -> Major:
         HTTPException: If the major is not found or if a database error occurs.
     """
     try:
-        major = db.query(Major).get(major_id)
+        major = db.query(Major).filter(Major.deleted_at.is_(None)).get(major_id)
         if major is None:
             raise HTTPException(status_code=404, detail="Major not found")
         return major
@@ -103,10 +104,10 @@ def delete_major_by_id(db: Session, major_id: str) -> None:
         HTTPException: If the major is not found or if a database error occurs.
     """
     try:
-        major = db.query(Major).get(major_id)
+        major = db.query(Major).filter(Major.deleted_at.is_(None)).get(major_id)
         if major is None:
             raise HTTPException(status_code=404, detail="Major not found")
-        db.delete(major)
+        major.deleted_at = datetime.datetime.utcnow()
         db.commit()
         
     except SQLAlchemyError as error:
@@ -133,7 +134,7 @@ def update_major_by_id(db: Session, major_id: str, update_data: MajorBaseSchema)
         HTTPException: If the major is not found or if a database error occurs.
     """
     try:
-        major = db.query(Major).get(major_id)
+        major = db.query(Major).filter(Major.deleted_at.is_(None)).get(major_id)
 
         if major is None:
             raise HTTPException(status_code=404, detail="Major not found")

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import HTTPException
 from pydantic import EmailStr
 
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.models.users import Student, User
 from src.schemas.students import StudentBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 
 def create_student(student: StudentBaseSchema, db: Session) -> Student:
@@ -52,7 +53,7 @@ def get_filtered_students(db: Session, filters: dict) -> List[Student]:
         ValueError: If an invalid attribute is used for filtering.
         Exception: If there is an unexpected error during the query.
     """
-    query = db.query(Student)
+    query = db.query(Student).filter(Student.deleted_at == None)
     try:
         for attribute, value in filters.items():
             if value is not None:
@@ -80,11 +81,12 @@ def get_student_by_id(db: Session, student_id: str, user: User) -> Student:
     """
     try:
         if user.super_admin:
-            student = db.query(Student).filter(Student.id == student_id).first()
+            student = db.query(Student).filter(Student.id == student_id, Student.deleted_at == None).first()
         else:
             student = db.query(Student).filter(
                 Student.id == student_id,
-                Student.user_id == user.id
+                Student.user_id == user.id,
+                Student.deleted_at == None
             ).first()
 
         if student is None:
@@ -109,10 +111,10 @@ def delete_student(db: Session, student_id: str) -> None:
         HTTPException: If the student is not found or if a database error occurs.
     """
     try:
-        student = db.query(Student).get(student_id)
+        student = db.query(Student).filter(Student.id == student_id, Student.deleted_at == None).first()
         if student is None:
             raise HTTPException(status_code=404, detail="Student not found")
-        db.delete(student)
+        student.deleted_at = datetime.now()
         db.commit()
     except SQLAlchemyError as error:
         db.rollback()
@@ -139,11 +141,12 @@ def update_student_by_id(db: Session, student_id: str, update_data: StudentBaseS
     """
     try:
         if user.super_admin:
-            student = db.query(Student).filter(Student.id == student_id).first()
+            student = db.query(Student).filter(Student.id == student_id, Student.deleted_at == None).first()
         else:
             student = db.query(Student).filter(
                 Student.id == student_id,
-                Student.user_id == user.id
+                Student.user_id == user.id,
+                Student.deleted_at == None
             ).first()
 
         if student is None:

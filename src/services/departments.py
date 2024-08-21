@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.models.departments import Department
 from src.schemas.departments import DepartmentBaseSchema
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 
 def create_department(department: DepartmentBaseSchema, db: Session) -> Department:
@@ -48,7 +49,7 @@ def get_filtered_departments(db: Session, filters: dict[str, Any]) -> List[Depar
     Returns:
         List[Department]: A list of Department objects that match the given filters.
     """
-    query = db.query(Department)
+    query = db.query(Department).filter(Department.deleted_at.is_(None))
 
     for key, value in filters.items():
         if value is not None:
@@ -83,7 +84,7 @@ def get_department_by_id(db: Session, department_id: str) -> Department:
         HTTPException: If the department is not found or if a database error occurs.
     """
     try:
-        department = db.query(Department).get(department_id)
+        department = db.query(Department).filter_by(id=department_id, deleted_at=None).first()
         if department is None:
             raise HTTPException(status_code=404, detail="Department not found")
         return department
@@ -103,10 +104,10 @@ def delete_department(db: Session, department_id: str) -> None:
         HTTPException: If the department is not found or if a database error occurs.
     """
     try:
-        department = db.query(Department).get(department_id)
+        department = db.query(Department).filter_by(id=department_id).first()
         if department is None:
             raise HTTPException(status_code=404, detail="Department not found")
-        db.delete(department)
+        department.deleted_at = datetime.datetime.now()
         db.commit()
     except SQLAlchemyError as error:
         db.rollback()
@@ -129,7 +130,7 @@ def update_department(db: Session, department_id: str, update_data: DepartmentBa
         HTTPException: If the department is not found or if a database error occurs.
     """
     try:
-        department = db.query(Department).get(department_id)
+        department = db.query(Department).filter_by(id=department_id, deleted_at=None).first()
 
         if department is None:
             raise HTTPException(status_code=404, detail="Department not found")
