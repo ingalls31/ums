@@ -1,7 +1,7 @@
 import string
 import uuid
 from src.config.settings import Base
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, DateTime
 
 from src.models.majors import Major
 
@@ -15,5 +15,6 @@ class Subject(Base):
     description = Column(String(255), nullable=True)
     total = Column(Integer, default=0)
     major_id = Column(String, ForeignKey(Major.id, ondelete='CASCADE'), nullable=False)
+    deleted_at = Column(DateTime, default=None)
     
     

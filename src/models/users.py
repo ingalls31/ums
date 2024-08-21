@@ -1,6 +1,6 @@
 import string
 from src.config.settings import Base
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, DateTime
 
 from src.models.majors import Major
 import uuid
@@ -21,6 +21,7 @@ class User(Base):
     address = Column(String(length=250), nullable=True)
     super_admin = Column(Boolean, default=False)
     disabled = Column(Boolean, default=False)
+    deleted_at = Column(DateTime, default=None)
     
     
 class Student(Base): 
@@ -31,6 +32,8 @@ class Student(Base):
     user_id = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
     gpa = Column(Integer)
     major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
+    deleted_at = Column(DateTime, default=None)
+    
     
     
 class Teacher(Base):
@@ -40,4 +43,6 @@ class Teacher(Base):
     code = Column(String(length=10))
     user_id = Column(String, ForeignKey(User.id, ondelete='CASCADE'))
     major = Column(String, ForeignKey(Major.id, ondelete='CASCADE'))
+    deleted_at = Column(DateTime, default=None)
+    
     

@@ -1,7 +1,7 @@
 import string
 import uuid
 from src.config.settings import Base
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, DateTime
 
 from src.models.classes import Class
 from src.models.subjects import Subject
@@ -19,4 +19,5 @@ class Point(Base):
     test = Column(Integer)
     practice = Column(Integer)
     final = Column(Integer)
+    deleted_at = Column(DateTime, default=None)
     

@@ -1,7 +1,7 @@
 import string
 import uuid
 from src.config.settings import Base
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, DateTime
 
 from src.models.subjects import Subject
 from src.models.users import Teacher
@@ -16,3 +16,4 @@ class Class(Base):
     subject_id = Column(String, ForeignKey(Subject.id, ondelete='CASCADE'))
     description = Column(String(length=250))
     total = Column(Integer)
+    deleted_at = Column(DateTime, default=None)
