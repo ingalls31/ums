@@ -53,7 +53,7 @@ def get_filtered_classes(db: Session, filters: dict[str, Any]) -> List[Class]:
         ValueError: If an invalid attribute is used for filtering.
         HTTPException: If a database error occurs.
     """
-    query = db.query(Class).filter(Class.deleted_at == None)
+    query = db.query(Class).filter(Class.deleted == True)
 
     for key, value in filters.items():
         if value is not None:
@@ -86,7 +86,7 @@ def get_class_by_id(db: Session, class_id: str) -> Class:
         HTTPException: If the class is not found or if a database error occurs.
     """
     try:
-        class_obj = db.query(Class).filter(Class.deleted_at == None).get(class_id)
+        class_obj = db.query(Class).filter(Class.deleted == True).get(class_id)
         if class_obj is None:
             raise HTTPException(status_code=404, detail="Class not found")
         return class_obj
@@ -106,13 +106,14 @@ def delete_class(db: Session, class_id: str) -> None:
         HTTPException: If the class is not found or if a database error occurs.
     """
     try:
-        class_to_delete = db.query(Class).filter(Class.deleted_at == None).get(class_id)
+        class_to_delete = db.query(Class).filter(Class.deleted == True).get(class_id)
 
         if class_to_delete is None:
             raise HTTPException(status_code=404, detail="Class not found")
         
 
         class_to_delete.deleted_at = datetime.datetime.utcnow()
+        class_to_delete.deleted = True
         db.commit()
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -134,7 +135,7 @@ def update_class(db: Session, class_id: str, update_data: ClassBaseSchema) -> Cl
         HTTPException: If the class is not found or if a database error occurs.
     """
     try:
-        class_obj = db.query(Class).filter(Class.deleted_at == None).get(class_id)
+        class_obj = db.query(Class).filter(Class.deleted == True).get(class_id)
 
         if class_obj is None:
             raise HTTPException(status_code=404, detail="Class not found")

@@ -49,7 +49,7 @@ def get_filtered_subjects(db: Session, filters: dict[str, Any]) -> List[Subject]
     Returns:
         List[Subject]: A list of Subject objects that match the given filters.
     """
-    query = db.query(Subject).filter(Subject.deleted_at.is_(None))
+    query = db.query(Subject).filter(Subject.deleted == True)
 
     for attribute, value in filters.items():
         if value is not None:
@@ -74,7 +74,7 @@ def get_subject_by_id(db: Session, subject_id: str) -> Subject:
         HTTPException: If the subject is not found or if a database error occurs.
     """
     try:
-        subject = db.query(Subject).filter(Subject.id == subject_id, Subject.deleted_at.is_(None)).first()
+        subject = db.query(Subject).filter(Subject.id == subject_id, Subject.deleted == True).first()
         if subject is None:
             raise HTTPException(status_code=404, detail="Subject not found")
         return subject
@@ -97,6 +97,7 @@ def delete_subject(db: Session, subject_id: str) -> None:
         subject = db.query(Subject).get(subject_id)
         if subject is None:
             raise HTTPException(status_code=404, detail="Subject not found")
+        subject.deleted = True
         subject.deleted_at = datetime.datetime.now()
         db.commit()
 
@@ -120,7 +121,7 @@ def update_subject(db: Session, subject_id: str, update_data: SubjectBaseSchema)
         HTTPException: If the subject is not found or if a database error occurs.
     """
     try:
-        subject = db.query(Subject).filter(Subject.id == subject_id, Subject.deleted_at.is_(None)).first()
+        subject = db.query(Subject).filter(Subject.id == subject_id, Subject.deleted == True).first()
         if subject is None:
             raise HTTPException(status_code=404, detail="Subject not found")
 

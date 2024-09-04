@@ -53,7 +53,7 @@ def get_filtered_students(db: Session, filters: dict) -> List[Student]:
         ValueError: If an invalid attribute is used for filtering.
         Exception: If there is an unexpected error during the query.
     """
-    query = db.query(Student).filter(Student.deleted_at == None)
+    query = db.query(Student).filter(Student.deleted == True)
     try:
         for attribute, value in filters.items():
             if value is not None:
@@ -81,12 +81,12 @@ def get_student_by_id(db: Session, student_id: str, user: User) -> Student:
     """
     try:
         if user.super_admin:
-            student = db.query(Student).filter(Student.id == student_id, Student.deleted_at == None).first()
+            student = db.query(Student).filter(Student.id == student_id, Student.deleted == True).first()
         else:
             student = db.query(Student).filter(
                 Student.id == student_id,
                 Student.user_id == user.id,
-                Student.deleted_at == None
+                Student.deleted == True
             ).first()
 
         if student is None:
@@ -111,9 +111,10 @@ def delete_student(db: Session, student_id: str) -> None:
         HTTPException: If the student is not found or if a database error occurs.
     """
     try:
-        student = db.query(Student).filter(Student.id == student_id, Student.deleted_at == None).first()
+        student = db.query(Student).filter(Student.id == student_id, Student.deleted == True).first()
         if student is None:
             raise HTTPException(status_code=404, detail="Student not found")
+        student.deleted = True
         student.deleted_at = datetime.now()
         db.commit()
     except SQLAlchemyError as error:
@@ -141,12 +142,12 @@ def update_student_by_id(db: Session, student_id: str, update_data: StudentBaseS
     """
     try:
         if user.super_admin:
-            student = db.query(Student).filter(Student.id == student_id, Student.deleted_at == None).first()
+            student = db.query(Student).filter(Student.id == student_id, Student.deleted == True).first()
         else:
             student = db.query(Student).filter(
                 Student.id == student_id,
                 Student.user_id == user.id,
-                Student.deleted_at == None
+                Student.deleted == True
             ).first()
 
         if student is None:

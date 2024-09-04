@@ -54,7 +54,7 @@ def get_filtered_users(db: Session, filters: dict) -> List[User]:
         Exception: Descriptive error if there is a problem during the query.
     """
     try:
-        query = db.query(User).filter(User.deleted_at == None)
+        query = db.query(User).filter(User.deleted == True)
 
         for key, value in filters.items():
             if value is not None:
@@ -86,7 +86,7 @@ def get_user_by_id(db: Session, user_id: str) -> User:
         HTTPException: If the user is not found or if a database error occurs.
     """
     try:
-        user = db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
+        user = db.query(User).filter(User.id == user_id, User.deleted == True).first()
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
         
@@ -112,9 +112,10 @@ def delete_user_by_id(db: Session, user_id: str) -> None:
         HTTPException: If the user is not found or if a database error occurs.
     """
     try:
-        user = db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
+        user = db.query(User).filter(User.id == user_id, User.deleted == True).first()
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
+        user.deleted = True
         user.deleted_at = datetime.datetime.utcnow()
         db.commit()
         
@@ -143,12 +144,12 @@ def update_user_by_id(db: Session, user_id: str, update_data: UserBaseSchema, us
     """
     try:
         if user.super_admin:
-            user = db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
+            user = db.query(User).filter(User.id == user_id, User.deleted == True).first()
         else:
             user = db.query(User).filter(
                 User.id == user_id,
                 User.user_id == user.id,
-                User.deleted_at == None
+                User.deleted == True
             ).first()
 
         if user is None:

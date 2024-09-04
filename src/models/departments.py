@@ -11,6 +11,7 @@ class Department(Base):
     name = Column(String(length=30))
     description = Column(String(length=250))
     total = Column(Integer)
+    deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, default=None)
     
     

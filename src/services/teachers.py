@@ -54,7 +54,7 @@ def get_filtered_teachers(db: Session, filters: dict[str, Any]) -> List[Teacher]
         ValueError: If an invalid attribute is used for filtering.
     """
     try:
-        query = db.query(Teacher).filter(Teacher.deleted_at == None)
+        query = db.query(Teacher).filter(Teacher.deleted == True)
 
         for attribute, value in filters.items():
             if value is not None:
@@ -84,12 +84,12 @@ def get_teacher_by_id(db: Session, teacher_id: str, user: User) -> Teacher:
     """
     try:
         if user.super_admin:
-            teacher = db.query(Teacher).filter(Teacher.id == teacher_id, Teacher.deleted_at == None).first()
+            teacher = db.query(Teacher).filter(Teacher.id == teacher_id, Teacher.deleted == True).first()
         else:
             teacher = db.query(Teacher).filter(
                 Teacher.id == teacher_id, 
                 Teacher.user_id == user.id, 
-                Teacher.deleted_at == None
+                Teacher.deleted == True
             ).first()
 
         if teacher is None:
@@ -114,6 +114,7 @@ def delete_teacher(db: Session, teacher_id: str) -> None:
         teacher = db.query(Teacher).get(teacher_id)
         if teacher is None:
             raise HTTPException(status_code=404, detail="Teacher not found")
+        teacher.deleted = True
         teacher.deleted_at = datetime.datetime.now()
         db.commit()
     except SQLAlchemyError as error:
@@ -138,12 +139,12 @@ def update_teacher(db: Session, teacher_id: str, update_data: TeacherBaseSchema,
     """
     try:
         if user.super_admin:
-            teacher = db.query(Teacher).filter(Teacher.id == teacher_id, Teacher.deleted_at == None).first()
+            teacher = db.query(Teacher).filter(Teacher.id == teacher_id, Teacher.deleted == True).first()
         else:
             teacher = db.query(Teacher).filter(
                 Teacher.id == teacher_id, 
                 Teacher.user_id == user.id, 
-                Teacher.deleted_at == None
+                Teacher.deleted == True
             ).first()
 
 

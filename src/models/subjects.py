@@ -15,6 +15,7 @@ class Subject(Base):
     description = Column(String(255), nullable=True)
     total = Column(Integer, default=0)
     major_id = Column(String, ForeignKey(Major.id, ondelete='CASCADE'), nullable=False)
+    deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, default=None)
     
     

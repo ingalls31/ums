@@ -50,7 +50,7 @@ def get_filtered_majors(db: Session, filters: dict[str, Any]) -> List[Major]:
         List[Major]: A list of Major objects that match the given filters.
     """
     try:
-        query = db.query(Major).filter(Major.deleted_at.is_(None))
+        query = db.query(Major).filter(Major.deleted == True)
 
         for attribute, value in filters.items():
             if value is not None:
@@ -80,7 +80,7 @@ def get_major_by_id(db: Session, major_id: str) -> Major:
         HTTPException: If the major is not found or if a database error occurs.
     """
     try:
-        major = db.query(Major).filter(Major.deleted_at.is_(None)).get(major_id)
+        major = db.query(Major).filter(Major.deleted == True).get(major_id)
         if major is None:
             raise HTTPException(status_code=404, detail="Major not found")
         return major
@@ -104,9 +104,10 @@ def delete_major_by_id(db: Session, major_id: str) -> None:
         HTTPException: If the major is not found or if a database error occurs.
     """
     try:
-        major = db.query(Major).filter(Major.deleted_at.is_(None)).get(major_id)
+        major = db.query(Major).filter(Major.deleted == True).get(major_id)
         if major is None:
             raise HTTPException(status_code=404, detail="Major not found")
+        major.deleted = True
         major.deleted_at = datetime.datetime.utcnow()
         db.commit()
         
@@ -134,7 +135,7 @@ def update_major_by_id(db: Session, major_id: str, update_data: MajorBaseSchema)
         HTTPException: If the major is not found or if a database error occurs.
     """
     try:
-        major = db.query(Major).filter(Major.deleted_at.is_(None)).get(major_id)
+        major = db.query(Major).filter(Major.deleted == True).get(major_id)
 
         if major is None:
             raise HTTPException(status_code=404, detail="Major not found")

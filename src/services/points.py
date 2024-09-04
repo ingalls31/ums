@@ -56,7 +56,7 @@ def get_filtered_points(
     Returns:
         List[Point]: A list of Point objects that match the given filters.
     """
-    query = db.query(Point).filter(Point.deleted_at == None)
+    query = db.query(Point).filter(Point.deleted == True)
 
     for key, value in filters.items():
         if value is not None:
@@ -92,7 +92,7 @@ def get_point_by_id(db: Session, point_id: str, user: User) -> Point:
         HTTPException: If the point is not found or if a database error occurs.
     """
     try:
-        point = db.query(Point).filter(Point.id == point_id, Point.deleted_at == None).first()
+        point = db.query(Point).filter(Point.id == point_id, Point.deleted == True).first()
         
         if point.student_id != user.id and user.super_admin == False and point.teacher_id != user.id:
             raise HTTPException(status_code=403, detail="Forbidden")
@@ -116,9 +116,10 @@ def delete_point(db: Session, point_id: str) -> None:
         HTTPException: If the point is not found or if a database error occurs.
     """
     try:
-        point = db.query(Point).filter(Point.id == point_id, Point.deleted_at == None).first()
+        point = db.query(Point).filter(Point.id == point_id, Point.deleted == True).first()
         if point is None:
             raise HTTPException(status_code=404, detail="Point not found")
+        point.deleted = True
         point.deleted_at = datetime.datetime.now()
         db.commit()
 
@@ -148,7 +149,7 @@ def update_point(db: Session, point_id: str, update_data: PointBaseSchema, user:
         if teacher is None and user.super_admin == False:
             raise HTTPException(status_code=403, detail="Forbidden")
         
-        point = db.query(Point).filter(Point.id == point_id, Point.deleted_at == None, Point.teacher_id == teacher.id).first()
+        point = db.query(Point).filter(Point.id == point_id, Point.deleted == True, Point.teacher_id == teacher.id).first()
 
         if point is None:
             raise HTTPException(status_code=404, detail="Point not found")

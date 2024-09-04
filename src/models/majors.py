@@ -15,5 +15,6 @@ class Major(Base):
     total = Column(Integer)
     description = Column(String(length=250))
     department_id = Column(String, ForeignKey(Department.id, ondelete='CASCADE'), nullable=False)
+    deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, default=None)
     

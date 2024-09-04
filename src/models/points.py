@@ -19,5 +19,6 @@ class Point(Base):
     test = Column(Integer)
     practice = Column(Integer)
     final = Column(Integer)
+    deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, default=None)
     
